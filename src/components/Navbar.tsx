@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Sun, Moon, User as UserIcon, Bell, LogOut, Menu, X, ChevronDown, FileText } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Sun, Moon, User as UserIcon, Bell, LogOut, Menu, X, ChevronDown } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { auth, db } from '../firebase';
@@ -14,9 +14,9 @@ function cn(...inputs: ClassValue[]) {
 
 export const Navbar: React.FC = () => {
   const { user, profile, isAdmin } = useAuth();
-const [isDark, setIsDark] = useState(() => {
-  return localStorage.getItem('theme') === 'dark';
-});  
+  const [isDark, setIsDark] = useState(() => {
+    return localStorage.getItem('theme') === 'dark';
+  });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isHscSscOpen, setIsHscSscOpen] = useState(false);
@@ -25,15 +25,15 @@ const [isDark, setIsDark] = useState(() => {
   const location = useLocation();
   const navigate = useNavigate();
 
-useEffect(() => {
-  if (isDark) {
-    document.documentElement.classList.add('dark');
-    localStorage.setItem('theme', 'dark');
-  } else {
-    document.documentElement.classList.remove('dark');
-    localStorage.setItem('theme', 'light');
-  }
-}, [isDark]);
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [isDark]);
 
   useEffect(() => {
     if (!user) return;
@@ -65,13 +65,27 @@ useEffect(() => {
     <nav className="sticky top-0 z-50 w-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
-          {/* Logo */}
+
+          {/* ── Logo ── */}
           <Link to="/" className="flex items-center gap-2">
-            <img src="/favicon.ico" alt="Sarothi Logo" className="w-10 h-10 rounded-full" referrerPolicy="no-referrer" />
-            <span className="text-xl font-bold text-zinc-900 dark:text-white hidden sm:block tracking-tighter">Sarothi</span>
+            {/* SVG Logo — golden S with book style */}
+            <div className="w-10 h-10 rounded-full flex items-center justify-center"
+              style={{ background: 'linear-gradient(135deg, #D4A017 0%, #F5C842 50%, #A07810 100%)' }}>
+              <span style={{
+                fontFamily: 'Georgia, serif',
+                fontSize: '22px',
+                fontWeight: '900',
+                color: '#fff',
+                lineHeight: 1,
+                textShadow: '0 1px 4px rgba(0,0,0,0.3)'
+              }}>S</span>
+            </div>
+            <span className="text-xl font-bold text-zinc-900 dark:text-white hidden sm:block tracking-tighter">
+              Sarothi
+            </span>
           </Link>
 
-          {/* Desktop Nav */}
+          {/* ── Desktop Nav ── */}
           <div className="hidden md:flex items-center gap-8">
             <Link
               to="/"
@@ -84,7 +98,7 @@ useEffect(() => {
             </Link>
 
             {/* HSC/SSC Dropdown */}
-            <div 
+            <div
               className="relative group"
               onMouseEnter={() => setIsHscSscOpen(true)}
               onMouseLeave={() => setIsHscSscOpen(false)}
@@ -119,15 +133,21 @@ useEffect(() => {
             ))}
           </div>
 
-          {/* Right Section */}
+          {/* ── Right Section ── */}
           <div className="flex items-center gap-4">
+
+            {/* Theme Toggle */}
             <button
               onClick={() => setIsDark(!isDark)}
               className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
             >
-              {isDark ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-zinc-600" />}
+              {isDark
+                ? <Sun className="w-5 h-5 text-yellow-400" />
+                : <Moon className="w-5 h-5 text-zinc-600" />
+              }
             </button>
 
+            {/* Notifications */}
             {user && (
               <div className="relative">
                 <button
@@ -145,10 +165,17 @@ useEffect(() => {
                   <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl py-2 max-h-96 overflow-y-auto z-[60]">
                     <div className="px-4 py-2 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center">
                       <span className="text-sm font-bold">Notifications</span>
-                      {unreadCount > 0 && <button className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest">Mark all read</button>}
+                      {unreadCount > 0 && (
+                        <button className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest">
+                          Mark all read
+                        </button>
+                      )}
                     </div>
                     {notifications.length > 0 ? notifications.map(n => (
-                      <div key={n.id} className={cn("px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors border-b border-zinc-50 dark:border-zinc-800 last:border-0", !n.read && "bg-emerald-50/30 dark:bg-emerald-900/10")}>
+                      <div key={n.id} className={cn(
+                        "px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors border-b border-zinc-50 dark:border-zinc-800 last:border-0",
+                        !n.read && "bg-emerald-50/30 dark:bg-emerald-900/10"
+                      )}>
                         <p className="text-sm font-bold text-zinc-900 dark:text-white">{n.title}</p>
                         <p className="text-xs text-zinc-500 mt-1">{n.message}</p>
                       </div>
@@ -160,6 +187,7 @@ useEffect(() => {
               </div>
             )}
 
+            {/* Profile / Sign In */}
             {user ? (
               <div className="relative">
                 <button
@@ -178,11 +206,19 @@ useEffect(() => {
                 {isProfileOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-lg py-1 animate-in fade-in zoom-in duration-200">
                     <div className="px-4 py-2 border-b border-zinc-100 dark:border-zinc-800">
-                      <p className="text-sm font-semibold text-zinc-900 dark:text-white truncate">{profile?.displayName || 'User'}</p>
+                      <p className="text-sm font-semibold text-zinc-900 dark:text-white truncate">
+                        {profile?.displayName || 'User'}
+                      </p>
                       <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate tracking-tight">{user.email}</p>
                     </div>
-                    <Link to="/profile" onClick={() => setIsProfileOpen(false)} className="block px-4 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800">Profile</Link>
-                    {isAdmin && <Link to="/admin" onClick={() => setIsProfileOpen(false)} className="block px-4 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800">Admin Dashboard</Link>}
+                    <Link to="/profile" onClick={() => setIsProfileOpen(false)} className="block px-4 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800">
+                      Profile
+                    </Link>
+                    {isAdmin && (
+                      <Link to="/admin" onClick={() => setIsProfileOpen(false)} className="block px-4 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800">
+                        Admin Dashboard
+                      </Link>
+                    )}
                     <button
                       onClick={handleSignOut}
                       className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 flex items-center gap-2"
@@ -212,10 +248,12 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* ── Mobile Menu ── */}
       {isMenuOpen && (
         <div className="md:hidden bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 py-4 px-4 space-y-2">
-          <Link to="/" onClick={() => setIsMenuOpen(false)} className="block px-4 py-2 rounded-lg text-base font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800">Home</Link>
+          <Link to="/" onClick={() => setIsMenuOpen(false)} className="block px-4 py-2 rounded-lg text-base font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800">
+            Home
+          </Link>
           <div className="px-4 py-2 space-y-2">
             <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">HSC/SSC</p>
             <Link to="/hsc-ssc?type=HSC" onClick={() => setIsMenuOpen(false)} className="block pl-4 py-1 text-sm text-zinc-600 dark:text-zinc-400">HSC</Link>
@@ -228,7 +266,9 @@ useEffect(() => {
               onClick={() => setIsMenuOpen(false)}
               className={cn(
                 "block px-4 py-2 rounded-lg text-base font-medium transition-colors",
-                location.pathname === link.path ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400" : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                location.pathname === link.path
+                  ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400"
+                  : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800"
               )}
             >
               {link.name}
