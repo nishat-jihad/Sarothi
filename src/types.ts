@@ -30,8 +30,10 @@ export interface Question {
   subject: string;
   paper?: '1st Paper' | '2nd Paper';
   questionType: 'MCQ' | 'CQ';
-  imageUrl: string;
-  downloadUrl: string;
+  // ── supports multiple images ──
+  imageUrls: string[];       // new: array of image URLs
+  imageUrl?: string;         // old: kept for backward compatibility
+  downloadUrl?: string;
   university?: string;
   uploadedAt: any;
 }
