@@ -10,6 +10,7 @@ export const Home: React.FC = () => {
   const [slides, setSlides] = useState<SlideshowImage[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [siteContent, setSiteContent] = useState<any>({});
+  const [moreFeatures, setMoreFeatures] = useState<any[]>([]);
 
   // Load slideshow
   useEffect(() => {
@@ -20,12 +21,21 @@ export const Home: React.FC = () => {
     return () => unsub();
   }, []);
 
-  // Load site content (feature images & text)
+  // Load site content
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'site_content'), snap => {
       const content: any = {};
       snap.docs.forEach(d => { content[d.id] = d.data(); });
       setSiteContent(content);
+    });
+    return () => unsub();
+  }, []);
+
+  // Load dynamic MORE features
+  useEffect(() => {
+    const q = query(collection(db, 'features'), orderBy('createdAt', 'asc'));
+    const unsub = onSnapshot(q, snap => {
+      setMoreFeatures(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
     return () => unsub();
   }, []);
@@ -43,7 +53,7 @@ export const Home: React.FC = () => {
   const nextSlide = () => setCurrentSlide(prev => (prev + 1) % slides.length);
   const prevSlide = () => setCurrentSlide(prev => (prev - 1 + slides.length) % slides.length);
 
-  // Feature content from Firebase or defaults
+  // Feature 1 & 2 content
   const feature1 = siteContent.feature_1 || {};
   const feature2 = siteContent.feature_2 || {};
 
@@ -82,7 +92,6 @@ export const Home: React.FC = () => {
           )}
         </AnimatePresence>
 
-        {/* Dots */}
         {slides.length > 0 && (
           <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2">
             {slides.map((_, idx) => (
@@ -92,7 +101,6 @@ export const Home: React.FC = () => {
           </div>
         )}
 
-        {/* Arrows */}
         {slides.length > 1 && (
           <>
             <button onClick={prevSlide} className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full backdrop-blur-sm transition-colors">
@@ -128,24 +136,14 @@ export const Home: React.FC = () => {
             </p>
           </div>
           <div className="rounded-3xl overflow-hidden shadow-2xl aspect-[4/3]">
-            <img
-              src={feature1Image}
-              alt="HSC SSC Feature"
-              className="w-full h-full object-cover"
-              crossOrigin="anonymous"
-            />
+            <img src={feature1Image} alt="HSC SSC Feature" className="w-full h-full object-cover" crossOrigin="anonymous" />
           </div>
         </div>
 
         {/* Feature 2 — Image Left, Text Right */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="order-2 lg:order-1 rounded-3xl overflow-hidden shadow-2xl aspect-[4/3]">
-            <img
-              src={feature2Image}
-              alt="Admission Feature"
-              className="w-full h-full object-cover"
-              crossOrigin="anonymous"
-            />
+            <img src={feature2Image} alt="Admission Feature" className="w-full h-full object-cover" crossOrigin="anonymous" />
           </div>
           <div className="order-1 lg:order-2 space-y-6">
             <h3 className="text-3xl md:text-4xl font-bold text-zinc-900 dark:text-white leading-snug">
@@ -173,6 +171,86 @@ export const Home: React.FC = () => {
             <Link to="/updates" className="text-emerald-600 hover:underline">Update Page</Link>.
           </h4>
         </div>
+
+        {/* ── MORE Section — Dynamic Features ── */}
+        {moreFeatures.length > 0 && (
+          <div className="space-y-16">
+            {/* Section Header */}
+            <div className="text-center space-y-3">
+              <span className="inline-block text-emerald-600 dark:text-emerald-400 font-bold text-sm uppercase tracking-widest bg-emerald-50 dark:bg-emerald-900/20 px-4 py-1.5 rounded-full">
+                More Features
+              </span>
+              <h2 className="text-4xl md:text-5xl font-black text-zinc-900 dark:text-white tracking-tight">
+                MORE
+              </h2>
+              <p className="text-zinc-500 dark:text-zinc-400 text-lg max-w-xl mx-auto">
+                আরও যা যা পাবে এই ওয়েবসাইটে
+              </p>
+            </div>
+
+            {/* Dynamic feature cards */}
+            <div className="space-y-24">
+              {moreFeatures.map((feature, idx) => (
+                <motion.div
+                  key={feature.id}
+                  initial={{ opacity: 0, y: 40 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.1 }}
+                  viewport={{ once: true }}
+                  className={`grid grid-cols-1 lg:grid-cols-2 gap-12 items-center`}
+                >
+                  {/* Alternate layout: even = image right, odd = image left */}
+                  {idx % 2 === 0 ? (
+                    <>
+                      <div className="space-y-6">
+                        <h3 className="text-3xl md:text-4xl font-bold text-zinc-900 dark:text-white leading-snug">
+                          {feature.title}
+                        </h3>
+                        <p className="text-zinc-600 dark:text-zinc-400 text-lg leading-relaxed">
+                          {feature.desc}
+                          {feature.linkLabel && feature.linkPath && (
+                            <>
+                              {' '}
+                              <Link to={feature.linkPath} className="text-emerald-600 hover:underline font-medium">
+                                {feature.linkLabel}
+                              </Link>
+                            </>
+                          )}
+                        </p>
+                      </div>
+                      <div className="rounded-3xl overflow-hidden shadow-2xl aspect-[4/3]">
+                        <img src={feature.imageUrl} alt={feature.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="order-2 lg:order-1 rounded-3xl overflow-hidden shadow-2xl aspect-[4/3]">
+                        <img src={feature.imageUrl} alt={feature.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      </div>
+                      <div className="order-1 lg:order-2 space-y-6">
+                        <h3 className="text-3xl md:text-4xl font-bold text-zinc-900 dark:text-white leading-snug">
+                          {feature.title}
+                        </h3>
+                        <p className="text-zinc-600 dark:text-zinc-400 text-lg leading-relaxed">
+                          {feature.desc}
+                          {feature.linkLabel && feature.linkPath && (
+                            <>
+                              {' '}
+                              <Link to={feature.linkPath} className="text-emerald-600 hover:underline font-medium">
+                                {feature.linkLabel}
+                              </Link>
+                            </>
+                          )}
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
