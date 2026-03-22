@@ -31,36 +31,26 @@ const uploadImage = async (file: File, path: string): Promise<string> => {
 };
 
 // ── Subject lists ──
-const SUBJECTS: Record<string, string[]> = {
+const SUBJECTS = {
   Science: [
-    'Bangla 1st Paper', 'Bangla 2nd Paper',
-    'English 1st Paper', 'English 2nd Paper',
-    'Physics 1st Paper', 'Physics 2nd Paper',
-    'Chemistry 1st Paper', 'Chemistry 2nd Paper',
-    'Biology 1st Paper', 'Biology 2nd Paper',
-    'Higher Mathematics 1st Paper', 'Higher Mathematics 2nd Paper',
-    'ICT',
+    'Bangla 1st Paper', 'Bangla 2nd Paper', 'English 1st Paper', 'English 2nd Paper',
+    'Physics 1st Paper', 'Physics 2nd Paper', 'Chemistry 1st Paper', 'Chemistry 2nd Paper',
+    'Biology 1st Paper', 'Biology 2nd Paper', 'Higher Mathematics 1st Paper', 'Higher Mathematics 2nd Paper',
+    'Information & Communication Technology ICT'
   ],
   Commerce: [
-    'Bangla 1st Paper', 'Bangla 2nd Paper',
-    'English 1st Paper', 'English 2nd Paper',
-    'ICT',
-    'Accounting 1st Paper', 'Accounting 2nd Paper',
-    'Economics 1st Paper', 'Economics 2nd Paper',
-    'Business Organization & Management 1st Paper', 'Business Organization & Management 2nd Paper',
-    'Finance, Banking & Insurance 1st Paper', 'Finance, Banking & Insurance 2nd Paper',
-    'Production Management & Marketing 1st Paper', 'Production Management & Marketing 2nd Paper',
-    'Statistics',
+    'Bangla 1st Paper', 'Bangla 2nd Paper', 'English 1st Paper', 'English 2nd Paper',
+    'Information & Communication Technology ICT', 'Accounting 1st Paper', 'Accounting 2nd Paper',
+    'Economics 1st Paper', 'Economics 2nd Paper', 'Business Organization and Management 1st Paper',
+    'Business Organization and Management 2nd Paper', 'Finance, Banking and Insurance 1st Paper',
+    'Finance, Banking and Insurance 2nd Paper', 'Production, Management & Marketing 1st Paper',
+    'Production, Management & Marketing 2nd Paper', 'Statistics 1st Paper', 'Statistics 2nd Paper'
   ],
   Arts: [
-    'Bangla 1st Paper', 'Bangla 2nd Paper',
-    'English 1st Paper', 'English 2nd Paper',
-    'ICT',
-    'Economics 1st Paper', 'Economics 2nd Paper',
-    'History 1st Paper', 'History 2nd Paper',
-    'Islamic History & Culture 1st Paper', 'Islamic History & Culture 2nd Paper',
-    'Civic & Good Governance 1st Paper', 'Civic & Good Governance 2nd Paper',
-  ],
+    'Bangla 1st Paper', 'Bangla 2nd Paper', 'English 1st Paper', 'English 2nd Paper',
+    'Information & Communication Technology ICT', 'Economics', 'History', 'Islamic History and Culture',
+    'Civic and Good Governance', 'Sociology', 'Social Work', 'Geography', 'Logic'
+  ]
 };
 
 const BOARDS = ['Dhaka', 'Rajshahi', 'Mymensingh', 'Chittagong', 'Cumilla', 'Jashore', 'Barishal', 'Sylhet', 'Dinajpur'];
