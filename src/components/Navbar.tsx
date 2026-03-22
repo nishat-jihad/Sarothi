@@ -14,7 +14,9 @@ function cn(...inputs: ClassValue[]) {
 
 export const Navbar: React.FC = () => {
   const { user, profile, isAdmin } = useAuth();
-  const [isDark, setIsDark] = useState(false);
+const [isDark, setIsDark] = useState(() => {
+  return localStorage.getItem('theme') === 'dark';
+});  
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isHscSscOpen, setIsHscSscOpen] = useState(false);
@@ -23,13 +25,15 @@ export const Navbar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [isDark]);
+useEffect(() => {
+  if (isDark) {
+    document.documentElement.classList.add('dark');
+    localStorage.setItem('theme', 'dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+    localStorage.setItem('theme', 'light');
+  }
+}, [isDark]);
 
   useEffect(() => {
     if (!user) return;
@@ -121,7 +125,7 @@ export const Navbar: React.FC = () => {
               onClick={() => setIsDark(!isDark)}
               className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
             >
-              {isDark ? <Moon className="w-5 h-5 text-zinc-400" /> : <Sun className="w-5 h-5 text-zinc-600" />}
+              {isDark ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-zinc-600" />}
             </button>
 
             {user && (
