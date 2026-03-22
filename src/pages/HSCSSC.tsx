@@ -133,10 +133,10 @@ export const HSCSSC: React.FC = () => {
               <button
                 key={year}
                 onClick={() => { setSelectedYear(year); setView('board'); }}
-                className="flex items-center justify-between p-6 bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500 transition-all group"
+                className="flex items-center justify-between p-6 bg-gray-100 dark:bg-zinc-800 rounded-2xl border border-gray-200 dark:border-zinc-700 hover:border-emerald-500 hover:bg-gray-200 dark:hover:bg-zinc-700 transition-all group"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-zinc-100 dark:bg-zinc-800 rounded-xl flex items-center justify-center text-sm font-bold text-zinc-600 dark:text-zinc-400 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                  <div className="w-12 h-12 bg-white dark:bg-zinc-700 rounded-xl flex items-center justify-center text-sm font-bold text-zinc-600 dark:text-zinc-400 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
                     {year.slice(-2)}
                   </div>
                   <span className="text-lg font-bold text-zinc-900 dark:text-white">{selectedType} {year}</span>
@@ -154,7 +154,7 @@ export const HSCSSC: React.FC = () => {
               <button
                 key={board}
                 onClick={() => { setSelectedBoard(board); setView('group'); }}
-                className="p-6 bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 text-left hover:border-emerald-500 transition-all group"
+                className="p-6 bg-gray-100 dark:bg-zinc-800 rounded-2xl border border-gray-200 dark:border-zinc-700 text-left hover:border-emerald-500 hover:bg-gray-200 dark:hover:bg-zinc-700 transition-all group"
               >
                 <span className="text-lg font-bold text-zinc-900 dark:text-white group-hover:text-emerald-600 transition-colors">{board}</span>
               </button>
@@ -169,7 +169,7 @@ export const HSCSSC: React.FC = () => {
               <button
                 key={group}
                 onClick={() => { setSelectedGroup(group as any); setView('subject'); }}
-                className="p-10 bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 flex flex-col items-center gap-4 hover:border-emerald-500 transition-all group"
+                className="p-10 bg-gray-100 dark:bg-zinc-800 rounded-3xl border border-gray-200 dark:border-zinc-700 flex flex-col items-center gap-4 hover:border-emerald-500 hover:bg-gray-200 dark:hover:bg-zinc-700 transition-all group"
               >
                 <div className="w-16 h-16 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-all">
                   <FileText className="w-8 h-8" />
@@ -184,7 +184,7 @@ export const HSCSSC: React.FC = () => {
         {view === 'subject' && selectedGroup && (
           <motion.div key="subject" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-6">
             {(selectedType === 'HSC' ? HSC_SUBJECTS : SSC_SUBJECTS)[selectedGroup].map((subject) => (
-              <div key={subject} className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6">
+              <div key={subject} className="bg-gray-50 dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-800 p-6">
                 <h4 className="text-lg font-bold text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
                   <div className="w-2 h-2 bg-emerald-500 rounded-full" />
                   {subject}
@@ -192,13 +192,13 @@ export const HSCSSC: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <button
                     onClick={() => { setSelectedSubject(subject); setSelectedQuestionType('MCQ'); setView('question'); }}
-                    className="flex items-center justify-center gap-2 py-3 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all font-bold text-sm text-zinc-700 dark:text-zinc-300"
+                    className="flex items-center justify-center gap-2 py-3 bg-green-50 dark:bg-emerald-900/20 rounded-xl border border-green-200 dark:border-emerald-800 hover:border-emerald-500 hover:bg-green-100 dark:hover:bg-emerald-900/40 transition-all font-bold text-sm text-green-800 dark:text-emerald-300"
                   >
                     <FileText className="w-4 h-4" /> MCQ
                   </button>
                   <button
                     onClick={() => { setSelectedSubject(subject); setSelectedQuestionType('CQ'); setView('question'); }}
-                    className="flex items-center justify-center gap-2 py-3 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all font-bold text-sm text-zinc-700 dark:text-zinc-300"
+                    className="flex items-center justify-center gap-2 py-3 bg-green-50 dark:bg-emerald-900/20 rounded-xl border border-green-200 dark:border-emerald-800 hover:border-emerald-500 hover:bg-green-100 dark:hover:bg-emerald-900/40 transition-all font-bold text-sm text-green-800 dark:text-emerald-300"
                   >
                     <FileText className="w-4 h-4" /> CQ
                   </button>
