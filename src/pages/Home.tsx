@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, orderBy, doc } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
 import { SlideshowImage } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -47,11 +47,11 @@ export const Home: React.FC = () => {
   const feature1 = siteContent.feature_1 || {};
   const feature2 = siteContent.feature_2 || {};
 
-  const feature1Image = feature1.imageUrl || 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=800&q=80';
+  const feature1Image = feature1.imageUrl || 'https://images.pexels.com/photos/256395/pexels-photo-256395.jpeg?auto=compress&w=800';
   const feature1Title = feature1.title || 'First feature: Download and see HSC/SSC previous year question';
   const feature1Desc = feature1.desc || 'We often get exhausted searching different websites for HSC or SSC questions, yet still fail to find them. On this website, those will be organized and presented properly. You will find this feature only on the Board Page.';
 
-  const feature2Image = feature2.imageUrl || 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&q=80';
+  const feature2Image = feature2.imageUrl || 'https://images.pexels.com/photos/1205651/pexels-photo-1205651.jpeg?auto=compress&w=800';
   const feature2Title = feature2.title || 'Second feature: Download and see Admission previous year question';
   const feature2Desc = feature2.desc || "You can't find admission questions anywhere? Stop searching—on this website you'll get all previous year questions for university, medical, and engineering. If any question is missing, please wait. This feature is available only on the Admission Page.";
 
@@ -132,7 +132,7 @@ export const Home: React.FC = () => {
               src={feature1Image}
               alt="HSC SSC Feature"
               className="w-full h-full object-cover"
-              referrerPolicy="no-referrer"
+              crossOrigin="anonymous"
             />
           </div>
         </div>
@@ -144,7 +144,7 @@ export const Home: React.FC = () => {
               src={feature2Image}
               alt="Admission Feature"
               className="w-full h-full object-cover"
-              referrerPolicy="no-referrer"
+              crossOrigin="anonymous"
             />
           </div>
           <div className="order-1 lg:order-2 space-y-6">
