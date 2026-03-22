@@ -40,12 +40,12 @@ export const Home: React.FC = () => {
     return () => unsub();
   }, []);
 
-  // Auto slide
+  // Auto slide — 3 সেকেন্ডে change হবে
   useEffect(() => {
     if (slides.length > 0) {
       const timer = setInterval(() => {
         setCurrentSlide(prev => (prev + 1) % slides.length);
-      }, 5000);
+      }, 3000);
       return () => clearInterval(timer);
     }
   }, [slides]);
@@ -70,7 +70,7 @@ export const Home: React.FC = () => {
 
       {/* ── Hero Slideshow ── */}
       <section className="relative h-[60vh] md:h-[80vh] w-full overflow-hidden bg-zinc-100 dark:bg-zinc-900">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="sync">
           {slides.length > 0 ? (
             <motion.img
               key={slides[currentSlide].id}
@@ -78,7 +78,7 @@ export const Home: React.FC = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.8 }}
+              transition={{ duration: 0.4, ease: 'easeInOut' }}
               className="absolute inset-0 w-full h-full object-cover"
               referrerPolicy="no-referrer"
               alt="Slideshow"
@@ -175,7 +175,6 @@ export const Home: React.FC = () => {
         {/* ── MORE Section — Dynamic Features ── */}
         {moreFeatures.length > 0 && (
           <div className="space-y-16">
-            {/* Section Header */}
             <div className="text-center space-y-3">
               <span className="inline-block text-emerald-600 dark:text-emerald-400 font-bold text-sm uppercase tracking-widest bg-emerald-50 dark:bg-emerald-900/20 px-4 py-1.5 rounded-full">
                 More Features
@@ -188,7 +187,6 @@ export const Home: React.FC = () => {
               </p>
             </div>
 
-            {/* Dynamic feature cards */}
             <div className="space-y-24">
               {moreFeatures.map((feature, idx) => (
                 <motion.div
@@ -199,7 +197,6 @@ export const Home: React.FC = () => {
                   viewport={{ once: true }}
                   className={`grid grid-cols-1 lg:grid-cols-2 gap-12 items-center`}
                 >
-                  {/* Alternate layout: even = image right, odd = image left */}
                   {idx % 2 === 0 ? (
                     <>
                       <div className="space-y-6">
@@ -209,12 +206,7 @@ export const Home: React.FC = () => {
                         <p className="text-zinc-600 dark:text-zinc-400 text-lg leading-relaxed">
                           {feature.desc}
                           {feature.linkLabel && feature.linkPath && (
-                            <>
-                              {' '}
-                              <Link to={feature.linkPath} className="text-emerald-600 hover:underline font-medium">
-                                {feature.linkLabel}
-                              </Link>
-                            </>
+                            <> <Link to={feature.linkPath} className="text-emerald-600 hover:underline font-medium">{feature.linkLabel}</Link></>
                           )}
                         </p>
                       </div>
@@ -234,12 +226,7 @@ export const Home: React.FC = () => {
                         <p className="text-zinc-600 dark:text-zinc-400 text-lg leading-relaxed">
                           {feature.desc}
                           {feature.linkLabel && feature.linkPath && (
-                            <>
-                              {' '}
-                              <Link to={feature.linkPath} className="text-emerald-600 hover:underline font-medium">
-                                {feature.linkLabel}
-                              </Link>
-                            </>
+                            <> <Link to={feature.linkPath} className="text-emerald-600 hover:underline font-medium">{feature.linkLabel}</Link></>
                           )}
                         </p>
                       </div>
