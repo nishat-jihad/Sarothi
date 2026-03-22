@@ -1,0 +1,132 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: users
+// Document ID: userId (uid)
+// Fields:
+//   - uid: string (required)
+//   - email: string (required)
+//   - displayName: string
+//   - photoURL: string
+//   - role: string (admin/user)
+//   - hscBoard, hscYear, sscBoard, sscYear, gpa, mobile, gender, group: strings
+//
+// Collection: slideshow
+// Document ID: imageId
+// Fields:
+//   - url: string
+//   - order: number
+//
+// Collection: questions
+// Document ID: questionId
+// Fields:
+//   - type, category, year, board, group, subject, paper, questionType, imageUrl, downloadUrl, university: strings
+//   - uploadedAt: timestamp
+//
+// Collection: updates
+// Document ID: updateId
+// Fields:
+//   - title, content, imageUrl: strings
+//   - createdAt: timestamp
+//
+// Collection: comments
+// Document ID: commentId
+// Fields:
+//   - targetId, userId, userName, userPhoto, text, parentId: strings
+//   - createdAt: timestamp
+//
+// Collection: notifications
+// Document ID: notificationId
+// Fields:
+//   - recipientId, title, message, link: strings
+//   - read: bool
+//   - createdAt: timestamp
+//
+// ===============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "alamnishat456@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'role']) &&
+             data.uid is string &&
+             data.email is string &&
+             data.role in ['admin', 'user'];
+    }
+
+    function isValidComment(data) {
+      return data.keys().hasAll(['targetId', 'userId', 'text', 'createdAt']) &&
+             data.text is string && data.text.size() > 0 && data.text.size() < 2000;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.role == 'user' || isAdmin());
+      allow update: if isAuthenticated() && (isOwner(userId) || isAdmin()) && isValidUser(request.resource.data) && (request.resource.data.role == resource.data.role || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    match /slideshow/{imageId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /questions/{questionId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /updates/{updateId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && isValidComment(request.resource.data) && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || isAdmin()) && isValidComment(request.resource.data);
+      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && (resource.data.recipientId == request.auth.uid || resource.data.recipientId == 'admin' && isAdmin());
+      allow create: if isAuthenticated(); // Users can notify admin
+      allow update: if isAuthenticated() && (resource.data.recipientId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    match /hsc_ssc_years/{yearId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /universities/{uniId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

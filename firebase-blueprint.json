@@ -1,0 +1,112 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User profile and academic information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "user"] },
+        "hscBoard": { "type": "string" },
+        "hscYear": { "type": "string" },
+        "sscBoard": { "type": "string" },
+        "sscYear": { "type": "string" },
+        "gpa": { "type": "string" },
+        "mobile": { "type": "string" },
+        "gender": { "type": "string", "enum": ["Male", "Female", "None"] },
+        "group": { "type": "string", "enum": ["Science", "Commerce", "Arts"] }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "SlideshowImage": {
+      "title": "Slideshow Image",
+      "description": "Images for the hero slider",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "url": { "type": "string" },
+        "order": { "type": "number" },
+        "uploadedBy": { "type": "string" }
+      },
+      "required": ["url", "order"]
+    },
+    "Question": {
+      "title": "Question Paper",
+      "description": "HSC, SSC, or Admission question paper",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string", "enum": ["HSC", "SSC", "Admission"] },
+        "category": { "type": "string", "description": "Engineering, Medical, University, GST for Admission" },
+        "year": { "type": "string" },
+        "board": { "type": "string" },
+        "group": { "type": "string" },
+        "subject": { "type": "string" },
+        "paper": { "type": "string", "description": "1st Paper, 2nd Paper" },
+        "questionType": { "type": "string", "enum": ["MCQ", "CQ"] },
+        "imageUrl": { "type": "string" },
+        "downloadUrl": { "type": "string" },
+        "university": { "type": "string" },
+        "uploadedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["type", "year", "imageUrl"]
+    },
+    "Update": {
+      "title": "Admission Update",
+      "description": "Latest news and updates for students",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "content", "createdAt"]
+    },
+    "Comment": {
+      "title": "Comment",
+      "description": "User comments on questions or updates",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "targetId": { "type": "string", "description": "ID of the question or update" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userPhoto": { "type": "string" },
+        "text": { "type": "string" },
+        "parentId": { "type": "string", "description": "For replies" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["targetId", "userId", "text", "createdAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "System notifications for users and admin",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "recipientId": { "type": "string", "description": "'admin' or specific userId" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "link": { "type": "string" },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["recipientId", "title", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": { "schema": "User", "description": "User profiles" },
+    "/slideshow/{imageId}": { "schema": "SlideshowImage", "description": "Hero slider images" },
+    "/questions/{questionId}": { "schema": "Question", "description": "Question papers" },
+    "/updates/{updateId}": { "schema": "Update", "description": "Admission updates" },
+    "/comments/{commentId}": { "schema": "Comment", "description": "Comments and replies" },
+    "/notifications/{notificationId}": { "schema": "Notification", "description": "System notifications" },
+    "/hsc_ssc_years/{yearId}": { "schema": { "type": "object", "properties": { "year": { "type": "string" } } }, "description": "Dynamic years list" },
+    "/universities/{uniId}": { "schema": { "type": "object", "properties": { "name": { "type": "string" }, "type": { "type": "string" } } }, "description": "Admission universities" }
+  }
+}
