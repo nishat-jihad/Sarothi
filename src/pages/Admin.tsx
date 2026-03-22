@@ -531,8 +531,162 @@ export const Admin: React.FC = () => {
             </div>
           )}
 
-          {/* SITE CONTENT */}
-          {activeTab === 'content' && (
+         // ══════════════════════════════════════════
+// এই অংশটুকু Admin.tsx এর Site Content tab এ replace করো
+// ══════════════════════════════════════════
+
+// Site Content tab এর পুরনো code এর বদলে এটা দাও:
+
+{activeTab === 'content' && (
+  <div className="space-y-10">
+
+    {/* ── Feature 1 ── */}
+    <div className="space-y-4 p-6 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+      <h3 className="text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+        📘 Feature 1 — HSC/SSC Section
+      </h3>
+      <div className="space-y-3">
+        <div>
+          <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">Title</label>
+          <input
+            type="text"
+            className="w-full p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500"
+            value={siteContent.feature_1?.title || ''}
+            onChange={e => setSiteContent({ ...siteContent, feature_1: { ...siteContent.feature_1, title: e.target.value } })}
+            placeholder="First feature: Download and see HSC/SSC previous year question"
+          />
+        </div>
+        <div>
+          <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">Description</label>
+          <textarea
+            rows={4}
+            className="w-full p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+            value={siteContent.feature_1?.desc || ''}
+            onChange={e => setSiteContent({ ...siteContent, feature_1: { ...siteContent.feature_1, desc: e.target.value } })}
+            placeholder="Description of feature 1... (include 'Board Page' text for auto-link)"
+          />
+        </div>
+        <div>
+          <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">Image</label>
+          <div className="flex items-center gap-4">
+            {siteContent.feature_1?.imageUrl && (
+              <img src={siteContent.feature_1.imageUrl} className="w-24 h-16 rounded-xl object-cover border border-zinc-200 dark:border-zinc-700" referrerPolicy="no-referrer" alt="Feature 1" />
+            )}
+            <label className={`flex items-center gap-2 px-4 py-2 text-white text-sm font-bold rounded-lg cursor-pointer transition-colors ${isUploading ? 'bg-zinc-400' : 'bg-emerald-600 hover:bg-emerald-700'}`}>
+              {isUploading ? <><Loader2 className="w-4 h-4 animate-spin" /> Uploading...</> : <><Upload className="w-4 h-4" /> Upload Image</>}
+              <input type="file" className="hidden" accept="image/*" disabled={isUploading}
+                onChange={async e => {
+                  const file = e.target.files?.[0]; if (!file) return;
+                  setIsUploading(true);
+                  try {
+                    const url = await uploadImage(file, 'feature_images');
+                    setSiteContent((prev: any) => ({ ...prev, feature_1: { ...prev.feature_1, imageUrl: url } }));
+                  } catch { alert('Upload failed!'); }
+                  setIsUploading(false);
+                  e.target.value = '';
+                }}
+              />
+            </label>
+          </div>
+        </div>
+      </div>
+      <button
+        onClick={() => setDoc(doc(db, 'site_content', 'feature_1'), siteContent.feature_1 || {}).then(() => alert('Feature 1 saved!'))}
+        className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700"
+      >
+        💾 Save Feature 1
+      </button>
+    </div>
+
+    {/* ── Feature 2 ── */}
+    <div className="space-y-4 p-6 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+      <h3 className="text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+        🎓 Feature 2 — Admission Section
+      </h3>
+      <div className="space-y-3">
+        <div>
+          <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">Title</label>
+          <input
+            type="text"
+            className="w-full p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500"
+            value={siteContent.feature_2?.title || ''}
+            onChange={e => setSiteContent({ ...siteContent, feature_2: { ...siteContent.feature_2, title: e.target.value } })}
+            placeholder="Second feature: Download and see Admission previous year question"
+          />
+        </div>
+        <div>
+          <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">Description</label>
+          <textarea
+            rows={4}
+            className="w-full p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+            value={siteContent.feature_2?.desc || ''}
+            onChange={e => setSiteContent({ ...siteContent, feature_2: { ...siteContent.feature_2, desc: e.target.value } })}
+            placeholder="Description of feature 2... (include 'Admission Page' text for auto-link)"
+          />
+        </div>
+        <div>
+          <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">Image</label>
+          <div className="flex items-center gap-4">
+            {siteContent.feature_2?.imageUrl && (
+              <img src={siteContent.feature_2.imageUrl} className="w-24 h-16 rounded-xl object-cover border border-zinc-200 dark:border-zinc-700" referrerPolicy="no-referrer" alt="Feature 2" />
+            )}
+            <label className={`flex items-center gap-2 px-4 py-2 text-white text-sm font-bold rounded-lg cursor-pointer transition-colors ${isUploading ? 'bg-zinc-400' : 'bg-emerald-600 hover:bg-emerald-700'}`}>
+              {isUploading ? <><Loader2 className="w-4 h-4 animate-spin" /> Uploading...</> : <><Upload className="w-4 h-4" /> Upload Image</>}
+              <input type="file" className="hidden" accept="image/*" disabled={isUploading}
+                onChange={async e => {
+                  const file = e.target.files?.[0]; if (!file) return;
+                  setIsUploading(true);
+                  try {
+                    const url = await uploadImage(file, 'feature_images');
+                    setSiteContent((prev: any) => ({ ...prev, feature_2: { ...prev.feature_2, imageUrl: url } }));
+                  } catch { alert('Upload failed!'); }
+                  setIsUploading(false);
+                  e.target.value = '';
+                }}
+              />
+            </label>
+          </div>
+        </div>
+      </div>
+      <button
+        onClick={() => setDoc(doc(db, 'site_content', 'feature_2'), siteContent.feature_2 || {}).then(() => alert('Feature 2 saved!'))}
+        className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700"
+      >
+        💾 Save Feature 2
+      </button>
+    </div>
+
+    {/* ── Privacy Policy ── */}
+    <div className="space-y-4 p-6 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+      <h3 className="text-lg font-bold text-zinc-900 dark:text-white">📋 Privacy Policy</h3>
+      <textarea
+        className="w-full p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-2xl min-h-[160px] outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+        value={siteContent.privacy_policy?.text || ''}
+        onChange={e => setSiteContent({ ...siteContent, privacy_policy: { text: e.target.value } })}
+        placeholder="Write privacy policy here..."
+      />
+      <button onClick={() => setDoc(doc(db, 'site_content', 'privacy_policy'), siteContent.privacy_policy || {}).then(() => alert('Saved!'))} className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700">💾 Save</button>
+    </div>
+
+    {/* ── Contact ── */}
+    <div className="space-y-4 p-6 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+      <h3 className="text-lg font-bold text-zinc-900 dark:text-white">📞 Contact Information</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">Email</label>
+          <input type="text" className="w-full p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500" value={siteContent.contact?.email || ''} onChange={e => setSiteContent({ ...siteContent, contact: { ...siteContent.contact, email: e.target.value } })} placeholder="contact@sarothi.com" />
+        </div>
+        <div>
+          <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">Phone</label>
+          <input type="text" className="w-full p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500" value={siteContent.contact?.phone || ''} onChange={e => setSiteContent({ ...siteContent, contact: { ...siteContent.contact, phone: e.target.value } })} placeholder="+880XXXXXXXXXX" />
+        </div>
+      </div>
+      <textarea className="w-full p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-2xl min-h-[80px] outline-none text-sm" value={siteContent.contact?.text || ''} onChange={e => setSiteContent({ ...siteContent, contact: { ...siteContent.contact, text: e.target.value } })} placeholder="Contact description..." />
+      <button onClick={() => setDoc(doc(db, 'site_content', 'contact'), siteContent.contact || {}).then(() => alert('Saved!'))} className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700">💾 Save Contact</button>
+    </div>
+
+  </div>
+)}
             <div className="space-y-12">
               <div className="space-y-4">
                 <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Privacy Policy</h3>
