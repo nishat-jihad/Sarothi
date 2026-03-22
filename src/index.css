@@ -1,2 +1,19 @@
 @import "tailwindcss";
 @variant dark (&:where(.dark, .dark *));
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+/* Smooth page transitions */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+/* Prevent layout shift */
+img {
+  content-visibility: auto;
+}
+/* Better tap targets on mobile */
+button, a {
+  -webkit-tap-highlight-color: transparent;
+}
