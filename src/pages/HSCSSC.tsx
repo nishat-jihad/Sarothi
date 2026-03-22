@@ -50,6 +50,7 @@ export const HSCSSC: React.FC = () => {
         where('type', '==', selectedType),
         where('year', '==', selectedYear),
         where('board', '==', selectedBoard),
+         where('group', '==', selectedGroup), 
         where('subject', '==', selectedSubject),
         where('questionType', '==', selectedQuestionType)
       );
