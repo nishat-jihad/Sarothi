@@ -67,7 +67,7 @@ useEffect(() => {
         <div className="flex justify-between h-16 items-center">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
-            <img src="https://picsum.photos/seed/sarothi/100/100" alt="Sarothi Logo" className="w-10 h-10 rounded-full" referrerPolicy="no-referrer" />
+            <img src="/favicon.ico" alt="Sarothi Logo" className="w-10 h-10 rounded-full" referrerPolicy="no-referrer" />
             <span className="text-xl font-bold text-zinc-900 dark:text-white hidden sm:block tracking-tighter">Sarothi</span>
           </Link>
 
