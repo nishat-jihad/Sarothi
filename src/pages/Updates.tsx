@@ -16,14 +16,23 @@ export const Updates: React.FC = () => {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setUpdates(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Update)));
       setLoading(false);
+    }, (err) => {
+      console.error('Updates load error:', err);
+      setLoading(false);
     });
     return () => unsubscribe();
   }, []);
 
-  if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-emerald-600" /></div>;
+  if (loading) return (
+    <div className="flex justify-center py-20">
+      <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+    </div>
+  );
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-12">
+
+      {/* Header */}
       <div className="flex items-center gap-4 mb-12">
         <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center text-emerald-600">
           <Bell className="w-6 h-6" />
@@ -34,76 +43,101 @@ export const Updates: React.FC = () => {
         </div>
       </div>
 
+      {/* Update list */}
       <div className="space-y-6">
         {updates.length > 0 ? updates.map((update, idx) => (
           <motion.div
             key={update.id}
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: idx * 0.1 }}
+            transition={{ delay: idx * 0.05 }}
             className="group bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 overflow-hidden hover:border-emerald-500 transition-all shadow-lg hover:shadow-emerald-600/5"
           >
             <div className="p-8">
               <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 uppercase tracking-widest mb-4">
                 <Calendar className="w-3 h-3" />
-                {update.createdAt?.seconds ? new Date(update.createdAt.seconds * 1000).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Just now'}
+                {update.createdAt?.seconds
+                  ? new Date(update.createdAt.seconds * 1000).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+                  : 'Just now'}
               </div>
-              <h3 className="text-2xl font-bold text-zinc-900 dark:text-white group-hover:text-emerald-600 transition-colors mb-4">{update.title}</h3>
-              <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mb-6 line-clamp-3 whitespace-pre-wrap">{update.content}</p>
-              
+              <h3 className="text-2xl font-bold text-zinc-900 dark:text-white group-hover:text-emerald-600 transition-colors mb-4">
+                {update.title}
+              </h3>
+              <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mb-6 line-clamp-3 whitespace-pre-wrap">
+                {update.content}
+              </p>
+
               <div className="flex items-center justify-between pt-6 border-t border-zinc-100 dark:border-zinc-800">
-                <button 
+                <button
                   onClick={() => setSelectedUpdate(update)}
                   className="flex items-center gap-2 text-sm font-bold text-zinc-900 dark:text-white hover:text-emerald-600 transition-colors"
                 >
                   Read Full Update <ChevronRight className="w-4 h-4" />
                 </button>
-                <div className="flex items-center gap-4 text-zinc-400">
-                  <div className="flex items-center gap-1 text-xs font-medium">
-                    <MessageCircle className="w-4 h-4" /> Discussions
-                  </div>
-                </div>
+                <button
+                  onClick={() => setSelectedUpdate(update)}
+                  className="flex items-center gap-1.5 text-xs font-medium text-zinc-400 hover:text-emerald-600 transition-colors"
+                >
+                  <MessageCircle className="w-4 h-4" /> Discussions
+                </button>
               </div>
             </div>
           </motion.div>
         )) : (
           <div className="text-center py-20 bg-zinc-50 dark:bg-zinc-900/50 rounded-3xl border-2 border-dashed border-zinc-200 dark:border-zinc-800">
-            <p className="text-zinc-500">No updates posted yet.</p>
+            <Bell className="w-12 h-12 mx-auto mb-4 text-zinc-300 dark:text-zinc-700" />
+            <p className="text-zinc-500">No updates posted yet. Check back soon!</p>
           </div>
         )}
       </div>
 
+      {/* Update detail modal */}
       <AnimatePresence>
         {selectedUpdate && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }} 
-              animate={{ scale: 1, opacity: 1 }} 
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white dark:bg-zinc-900 rounded-[2.5rem] p-8 w-full max-w-3xl max-h-[90vh] overflow-y-auto border border-zinc-200 dark:border-zinc-800 relative"
+              className="bg-white dark:bg-zinc-900 rounded-[2.5rem] p-8 w-full max-w-3xl max-h-[90vh] overflow-y-auto border border-zinc-200 dark:border-zinc-800 relative shadow-2xl"
             >
-              <button 
+              {/* Close button */}
+              <button
                 onClick={() => setSelectedUpdate(null)}
                 className="absolute top-6 right-6 p-2 bg-zinc-100 dark:bg-zinc-800 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
 
+              {/* Date */}
               <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 uppercase tracking-widest mb-4">
                 <Calendar className="w-3 h-3" />
-                {selectedUpdate.createdAt?.seconds ? new Date(selectedUpdate.createdAt.seconds * 1000).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Just now'}
-              </div>
-              <h3 className="text-3xl font-black text-zinc-900 dark:text-white tracking-tighter mb-6">{selectedUpdate.title}</h3>
-              
-              <div className="prose dark:prose-invert max-w-none mb-12">
-                <p className="text-zinc-700 dark:text-zinc-300 leading-relaxed whitespace-pre-wrap">{selectedUpdate.content}</p>
+                {selectedUpdate.createdAt?.seconds
+                  ? new Date(selectedUpdate.createdAt.seconds * 1000).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+                  : 'Just now'}
               </div>
 
-              <div className="pt-12 border-t border-zinc-100 dark:border-zinc-800">
-                <h4 className="text-lg font-bold text-zinc-900 dark:text-white mb-8 flex items-center gap-2 tracking-tighter">
+              {/* Title */}
+              <h3 className="text-3xl font-black text-zinc-900 dark:text-white tracking-tighter mb-6">
+                {selectedUpdate.title}
+              </h3>
+
+              {/* Content */}
+              <div className="mb-12">
+                <p className="text-zinc-700 dark:text-zinc-300 leading-relaxed whitespace-pre-wrap text-base">
+                  {selectedUpdate.content}
+                </p>
+              </div>
+
+              {/* Comments — targetTitle pass করা হচ্ছে notification এর জন্য */}
+              <div className="pt-8 border-t border-zinc-100 dark:border-zinc-800">
+                <h4 className="text-lg font-bold text-zinc-900 dark:text-white mb-6 flex items-center gap-2 tracking-tighter">
                   <MessageCircle className="w-5 h-5 text-emerald-600" /> Discussions
                 </h4>
-                <CommentSection targetId={selectedUpdate.id} />
+                <CommentSection
+                  targetId={selectedUpdate.id}
+                  targetTitle={selectedUpdate.title}
+                />
               </div>
             </motion.div>
           </div>
