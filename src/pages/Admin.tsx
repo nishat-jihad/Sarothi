@@ -7,7 +7,7 @@ import { Plus, Trash2, Edit, Upload, Image as ImageIcon, FileText, Loader2, Sett
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { motion } from 'framer-motion';
 
-// ── Cloudinary Config ──
+// ── Cloudinary ──
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const UPLOAD_PRESET = 'sarothi_upload';
 
@@ -15,25 +15,56 @@ const uploadToCloudinary = async (file: File): Promise<string> => {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('upload_preset', UPLOAD_PRESET);
-  const response = await fetch(
-    `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
-    { method: 'POST', body: formData }
-  );
-  const data = await response.json();
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: formData });
+  const data = await res.json();
   if (!data.secure_url) throw new Error('Cloudinary upload failed');
   return data.secure_url;
 };
 
 const uploadImage = async (file: File, path: string): Promise<string> => {
-  try {
-    return await uploadToCloudinary(file);
-  } catch (err) {
-    console.warn('Cloudinary failed, trying Firebase Storage...', err);
+  try { return await uploadToCloudinary(file); }
+  catch (err) {
     const storageRef = ref(storage, `${path}/${Date.now()}`);
     await uploadBytes(storageRef, file);
     return await getDownloadURL(storageRef);
   }
 };
+
+// ── Subject lists ──
+const SUBJECTS = {
+  Science: [
+    'Bangla 1st Paper', 'Bangla 2nd Paper',
+    'English 1st Paper', 'English 2nd Paper',
+    'Physics 1st Paper', 'Physics 2nd Paper',
+    'Chemistry 1st Paper', 'Chemistry 2nd Paper',
+    'Biology 1st Paper', 'Biology 2nd Paper',
+    'Higher Mathematics 1st Paper', 'Higher Mathematics 2nd Paper',
+    'ICT',
+  ],
+  Commerce: [
+    'Bangla 1st Paper', 'Bangla 2nd Paper',
+    'English 1st Paper', 'English 2nd Paper',
+    'ICT',
+    'Accounting 1st Paper', 'Accounting 2nd Paper',
+    'Economics 1st Paper', 'Economics 2nd Paper',
+    'Business Organization & Management 1st Paper', 'Business Organization & Management 2nd Paper',
+    'Finance, Banking & Insurance 1st Paper', 'Finance, Banking & Insurance 2nd Paper',
+    'Production Management & Marketing 1st Paper', 'Production Management & Marketing 2nd Paper',
+    'Statistics',
+  ],
+  Arts: [
+    'Bangla 1st Paper', 'Bangla 2nd Paper',
+    'English 1st Paper', 'English 2nd Paper',
+    'ICT',
+    'Economics 1st Paper', 'Economics 2nd Paper',
+    'History 1st Paper', 'History 2nd Paper',
+    'Islamic History & Culture 1st Paper', 'Islamic History & Culture 2nd Paper',
+    'Civic & Good Governance 1st Paper', 'Civic & Good Governance 2nd Paper',
+  ],
+};
+
+const BOARDS = ['Dhaka', 'Rajshahi', 'Mymensingh', 'Chittagong', 'Cumilla', 'Jashore', 'Barishal', 'Sylhet', 'Dinajpur'];
+const YEARS = Array.from({ length: 9 }, (_, i) => String(2026 - i)); // 2026 down to 2018
 
 export const Admin: React.FC = () => {
   const { isAdmin, loading } = useAuth();
@@ -46,14 +77,16 @@ export const Admin: React.FC = () => {
 
   // Question form
   const [showQuestionForm, setShowQuestionForm] = useState(false);
-  const [newQuestion, setNewQuestion] = useState<Partial<Question>>({
-    type: 'HSC',
-    year: new Date().getFullYear().toString(),
-    questionType: 'MCQ',
-    category: 'Engineering',
-    imageUrls: [],
-  });
-  const [uploadingImageIndex, setUploadingImageIndex] = useState<number | null>(null);
+  const [qType, setQType] = useState<'HSC' | 'SSC' | 'Admission'>('HSC');
+  const [qYear, setQYear] = useState('2026');
+  const [qBoard, setQBoard] = useState('Dhaka');
+  const [qGroup, setQGroup] = useState<'Science' | 'Commerce' | 'Arts'>('Science');
+  const [qSubject, setQSubject] = useState('');
+  const [qQuestionType, setQQuestionType] = useState<'MCQ' | 'CQ'>('MCQ');
+  const [qCategory, setQCategory] = useState('Engineering');
+  const [qUniversity, setQUniversity] = useState('');
+  const [qImageUrls, setQImageUrls] = useState<string[]>([]);
+  const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
 
   // Update form
   const [showUpdateForm, setShowUpdateForm] = useState(false);
@@ -64,129 +97,92 @@ export const Admin: React.FC = () => {
 
   useEffect(() => {
     if (!isAdmin) return;
-    const qS = query(collection(db, 'slideshow'), orderBy('order', 'asc'));
-    const unsubscribeS = onSnapshot(qS, (snapshot) => {
-      setSlides(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SlideshowImage)));
-    });
-    const qU = query(collection(db, 'updates'), orderBy('createdAt', 'desc'));
-    const unsubscribeU = onSnapshot(qU, (snapshot) => {
-      setUpdates(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Update)));
-    });
-    const qQ = query(collection(db, 'questions'), orderBy('uploadedAt', 'desc'));
-    const unsubscribeQ = onSnapshot(qQ, (snapshot) => {
-      setQuestions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Question)));
-    });
-    const unsubscribeC = onSnapshot(collection(db, 'site_content'), (snapshot) => {
-      const content: any = {};
-      snapshot.docs.forEach(doc => { content[doc.id] = doc.data(); });
-      setSiteContent(content);
-    });
-    return () => { unsubscribeS(); unsubscribeU(); unsubscribeQ(); unsubscribeC(); };
+    const unS = onSnapshot(query(collection(db, 'slideshow'), orderBy('order', 'asc')), s => setSlides(s.docs.map(d => ({ id: d.id, ...d.data() } as SlideshowImage))));
+    const unU = onSnapshot(query(collection(db, 'updates'), orderBy('createdAt', 'desc')), s => setUpdates(s.docs.map(d => ({ id: d.id, ...d.data() } as Update))));
+    const unQ = onSnapshot(query(collection(db, 'questions'), orderBy('uploadedAt', 'desc')), s => setQuestions(s.docs.map(d => ({ id: d.id, ...d.data() } as Question))));
+    const unC = onSnapshot(collection(db, 'site_content'), s => { const c: any = {}; s.docs.forEach(d => { c[d.id] = d.data(); }); setSiteContent(c); });
+    return () => { unS(); unU(); unQ(); unC(); };
   }, [isAdmin]);
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-emerald-600" /></div>;
-  if (!isAdmin) return <div className="text-center py-20 text-red-500 font-bold">Access Denied. Admin only.</div>;
+  if (!isAdmin) return <div className="text-center py-20 text-red-500 font-bold">Access Denied.</div>;
 
-  const updateSiteContent = async (id: string, data: any) => {
-    try {
-      await setDoc(doc(db, 'site_content', id), data);
-      alert('Content updated!');
-    } catch (err) { alert('Update failed'); }
-  };
-
-  // ── Slide Upload ──
+  // ── Slide upload ──
   const handleSlideUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (slides.length >= 6) { alert('Maximum 6 slides allowed!'); return; }
+    const file = e.target.files?.[0]; if (!file) return;
+    if (slides.length >= 6) { alert('Max 6 slides!'); return; }
     setIsUploading(true);
-    try {
-      const url = await uploadImage(file, 'slideshow');
-      await addDoc(collection(db, 'slideshow'), { url, order: slides.length + 1 });
-    } catch (err) { alert('Upload failed!'); }
+    try { const url = await uploadImage(file, 'slideshow'); await addDoc(collection(db, 'slideshow'), { url, order: slides.length + 1 }); }
+    catch { alert('Upload failed!'); }
     setIsUploading(false);
   };
 
-  const deleteSlide = async (id: string) => {
-    if (confirm('Delete this slide?')) await deleteDoc(doc(db, 'slideshow', id));
-  };
-
-  // ── Question: Add image to array ──
-  const handleAddQuestionImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const currentImages = newQuestion.imageUrls || [];
-    const index = currentImages.length;
-    setUploadingImageIndex(index);
+  // ── Question image upload ──
+  const handleAddImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; if (!file) return;
+    const idx = qImageUrls.length;
+    setUploadingIdx(idx);
     try {
       const url = await uploadImage(file, 'questions');
-      setNewQuestion(prev => ({
-        ...prev,
-        imageUrls: [...(prev.imageUrls || []), url],
-        imageUrl: prev.imageUrls?.length === 0 ? url : prev.imageUrl, // backward compat
-        downloadUrl: url,
-      }));
-    } catch (err) { alert('Image upload failed!'); }
-    setUploadingImageIndex(null);
-    // Reset file input
+      setQImageUrls(prev => [...prev, url]);
+    } catch { alert('Image upload failed!'); }
+    setUploadingIdx(null);
     e.target.value = '';
   };
 
-  // ── Question: Remove image from array ──
-  const removeQuestionImage = (index: number) => {
-    setNewQuestion(prev => ({
-      ...prev,
-      imageUrls: (prev.imageUrls || []).filter((_, i) => i !== index),
-    }));
+  const removeImage = (i: number) => setQImageUrls(prev => prev.filter((_, idx) => idx !== i));
+
+  const resetQuestionForm = () => {
+    setQType('HSC'); setQYear('2026'); setQBoard('Dhaka');
+    setQGroup('Science'); setQSubject(''); setQQuestionType('MCQ');
+    setQCategory('Engineering'); setQUniversity(''); setQImageUrls([]);
+    setShowQuestionForm(false);
   };
 
   const handleQuestionUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    const imgs = newQuestion.imageUrls || [];
-    if (imgs.length === 0) { alert('Please upload at least one image!'); return; }
-    if (!newQuestion.subject) { alert('Please enter subject name!'); return; }
+    if (qImageUrls.length === 0) { alert('Please upload at least one image!'); return; }
+    if (!qSubject) { alert('Please select a subject!'); return; }
     setIsUploading(true);
     try {
       await addDoc(collection(db, 'questions'), {
-        ...newQuestion,
-        imageUrls: imgs,
-        imageUrl: imgs[0], // backward compat
+        type: qType,
+        year: qYear,
+        board: qType !== 'Admission' ? qBoard : null,
+        group: qType !== 'Admission' ? qGroup : null,
+        subject: qSubject,
+        questionType: qQuestionType,
+        category: qType === 'Admission' ? qCategory : null,
+        university: qType === 'Admission' ? qUniversity : null,
+        imageUrls: qImageUrls,
+        imageUrl: qImageUrls[0],
+        downloadUrl: qImageUrls[0],
         uploadedAt: serverTimestamp(),
       });
-      setShowQuestionForm(false);
-      setNewQuestion({ type: 'HSC', year: new Date().getFullYear().toString(), questionType: 'MCQ', imageUrls: [] });
-      alert('Question uploaded!');
-    } catch (err) { alert('Upload failed'); }
+      alert(`✅ Question uploaded! (${qImageUrls.length} image${qImageUrls.length > 1 ? 's' : ''})`);
+      resetQuestionForm();
+    } catch (err) { console.error(err); alert('Upload failed!'); }
     setIsUploading(false);
   };
 
-  const deleteQuestion = async (id: string) => {
-    if (confirm('Delete this question?')) await deleteDoc(doc(db, 'questions', id));
-  };
-
   // ── Update CRUD ──
-  const openNewUpdateForm = () => { setEditingUpdate(null); setUpdateTitle(''); setUpdateContent(''); setShowUpdateForm(true); };
-  const openEditUpdateForm = (update: Update) => { setEditingUpdate(update); setUpdateTitle(update.title || ''); setUpdateContent(update.content || ''); setShowUpdateForm(true); };
-  const closeUpdateForm = () => { setShowUpdateForm(false); setEditingUpdate(null); setUpdateTitle(''); setUpdateContent(''); };
+  const openNew = () => { setEditingUpdate(null); setUpdateTitle(''); setUpdateContent(''); setShowUpdateForm(true); };
+  const openEdit = (u: Update) => { setEditingUpdate(u); setUpdateTitle(u.title); setUpdateContent(u.content || ''); setShowUpdateForm(true); };
+  const closeUpdate = () => { setShowUpdateForm(false); setEditingUpdate(null); };
 
-  const handleSaveUpdate = async () => {
-    if (!updateTitle.trim()) { alert('Title is required!'); return; }
-    if (!updateContent.trim()) { alert('Content is required!'); return; }
+  const saveUpdate = async () => {
+    if (!updateTitle.trim()) { alert('Title required!'); return; }
+    if (!updateContent.trim()) { alert('Content required!'); return; }
     setIsSavingUpdate(true);
     try {
-      if (editingUpdate) {
-        await updateDoc(doc(db, 'updates', editingUpdate.id), { title: updateTitle.trim(), content: updateContent.trim() });
-      } else {
-        await addDoc(collection(db, 'updates'), { title: updateTitle.trim(), content: updateContent.trim(), createdAt: serverTimestamp() });
-      }
-      closeUpdateForm();
-    } catch (err) { alert('Failed to save update!'); }
+      if (editingUpdate) await updateDoc(doc(db, 'updates', editingUpdate.id), { title: updateTitle.trim(), content: updateContent.trim() });
+      else await addDoc(collection(db, 'updates'), { title: updateTitle.trim(), content: updateContent.trim(), createdAt: serverTimestamp() });
+      closeUpdate();
+    } catch { alert('Failed!'); }
     setIsSavingUpdate(false);
   };
 
-  const deleteUpdate = async (id: string) => {
-    if (confirm('Delete this update?')) await deleteDoc(doc(db, 'updates', id));
-  };
+  const currentSubjects = SUBJECTS[qGroup] || [];
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
@@ -203,7 +199,7 @@ export const Admin: React.FC = () => {
             { id: 'users', name: 'Users', icon: Users },
           ].map((tab) => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id as any)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === tab.id ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === tab.id ? 'bg-emerald-600 text-white shadow-lg' : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>
               <tab.icon className="w-5 h-5" />{tab.name}
             </button>
           ))}
@@ -216,8 +212,8 @@ export const Admin: React.FC = () => {
           {activeTab === 'slideshow' && (
             <div className="space-y-8">
               <div className="flex justify-between items-center">
-                <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Manage Slideshow ({slides.length}/6)</h3>
-                <label className={`flex items-center gap-2 px-4 py-2 text-white text-sm font-bold rounded-lg cursor-pointer transition-colors ${slides.length >= 6 || isUploading ? 'bg-zinc-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'}`}>
+                <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Slideshow ({slides.length}/6)</h3>
+                <label className={`flex items-center gap-2 px-4 py-2 text-white text-sm font-bold rounded-lg cursor-pointer ${slides.length >= 6 || isUploading ? 'bg-zinc-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'}`}>
                   {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                   {isUploading ? 'Uploading...' : 'Add Slide'}
                   <input type="file" className="hidden" onChange={handleSlideUpload} accept="image/*" disabled={slides.length >= 6 || isUploading} />
@@ -225,11 +221,11 @@ export const Admin: React.FC = () => {
               </div>
               {slides.length === 0 && <div className="text-center py-16 text-zinc-400"><ImageIcon className="w-12 h-12 mx-auto mb-4 opacity-30" /><p>No slides yet.</p></div>}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {slides.map((slide) => (
+                {slides.map(slide => (
                   <div key={slide.id} className="relative group rounded-2xl overflow-hidden aspect-video bg-zinc-100 dark:bg-zinc-800">
                     <img src={slide.url} className="w-full h-full object-cover" referrerPolicy="no-referrer" alt="slide" />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <button onClick={() => deleteSlide(slide.id)} className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700"><Trash2 className="w-5 h-5" /></button>
+                      <button onClick={() => { if (confirm('Delete?')) deleteDoc(doc(db, 'slideshow', slide.id)); }} className="p-2 bg-red-600 text-white rounded-lg"><Trash2 className="w-5 h-5" /></button>
                     </div>
                   </div>
                 ))}
@@ -241,23 +237,21 @@ export const Admin: React.FC = () => {
           {activeTab === 'updates' && (
             <div className="space-y-8">
               <div className="flex justify-between items-center">
-                <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Admission Updates</h3>
-                <button onClick={openNewUpdateForm} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg transition-colors">
-                  <Plus className="w-4 h-4" /> New Update
-                </button>
+                <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Updates</h3>
+                <button onClick={openNew} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg"><Plus className="w-4 h-4" /> New Update</button>
               </div>
               {updates.length === 0 && <div className="text-center py-16 text-zinc-400"><Bell className="w-12 h-12 mx-auto mb-4 opacity-30" /><p>No updates yet.</p></div>}
               <div className="space-y-4">
-                {updates.map((update) => (
-                  <div key={update.id} className="p-6 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 flex justify-between items-start">
+                {updates.map(u => (
+                  <div key={u.id} className="p-6 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 flex justify-between items-start">
                     <div className="flex-1 mr-4">
-                      <h4 className="font-bold text-zinc-900 dark:text-white">{update.title}</h4>
-                      <p className="text-sm text-zinc-500 mt-1 line-clamp-2">{update.content}</p>
-                      <p className="text-xs text-zinc-400 mt-2">{update.createdAt?.seconds ? new Date(update.createdAt.seconds * 1000).toLocaleDateString('en-BD', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</p>
+                      <h4 className="font-bold text-zinc-900 dark:text-white">{u.title}</h4>
+                      <p className="text-sm text-zinc-500 mt-1 line-clamp-2">{u.content}</p>
+                      <p className="text-xs text-zinc-400 mt-2">{u.createdAt?.seconds ? new Date(u.createdAt.seconds * 1000).toLocaleDateString('en-BD', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</p>
                     </div>
-                    <div className="flex gap-2 flex-shrink-0">
-                      <button onClick={() => openEditUpdateForm(update)} className="p-2 text-zinc-400 hover:text-emerald-600"><Edit className="w-5 h-5" /></button>
-                      <button onClick={() => deleteUpdate(update.id)} className="p-2 text-zinc-400 hover:text-red-600"><Trash2 className="w-5 h-5" /></button>
+                    <div className="flex gap-2">
+                      <button onClick={() => openEdit(u)} className="p-2 text-zinc-400 hover:text-emerald-600"><Edit className="w-5 h-5" /></button>
+                      <button onClick={() => { if (confirm('Delete?')) deleteDoc(doc(db, 'updates', u.id)); }} className="p-2 text-zinc-400 hover:text-red-600"><Trash2 className="w-5 h-5" /></button>
                     </div>
                   </div>
                 ))}
@@ -270,121 +264,155 @@ export const Admin: React.FC = () => {
             <div className="space-y-8">
               <div className="flex justify-between items-center">
                 <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Question Papers</h3>
-                <button onClick={() => setShowQuestionForm(true)} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg transition-colors">
-                  <Plus className="w-4 h-4" /> Add Question
-                </button>
+                <button onClick={() => setShowQuestionForm(true)} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg"><Plus className="w-4 h-4" /> Add Question</button>
               </div>
 
+              {/* Question Upload Modal */}
               {showQuestionForm && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                   <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
                     className="bg-white dark:bg-zinc-900 rounded-[2.5rem] p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-zinc-200 dark:border-zinc-800">
                     <div className="flex justify-between items-center mb-6">
-                      <h4 className="text-2xl font-black text-zinc-900 dark:text-white tracking-tighter">Upload Question</h4>
-                      <button onClick={() => setShowQuestionForm(false)} className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800"><X className="w-5 h-5" /></button>
+                      <h4 className="text-2xl font-black text-zinc-900 dark:text-white">Upload Question</h4>
+                      <button onClick={resetQuestionForm} className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800"><X className="w-5 h-5" /></button>
                     </div>
+
                     <form onSubmit={handleQuestionUpload} className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Type</label>
-                          <select value={newQuestion.type} onChange={e => setNewQuestion({ ...newQuestion, type: e.target.value as any })} className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500">
-                            <option value="HSC">HSC</option><option value="SSC">SSC</option><option value="Admission">Admission</option>
-                          </select>
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Year</label>
-                          <input type="text" value={newQuestion.year} onChange={e => setNewQuestion({ ...newQuestion, year: e.target.value })} placeholder="e.g. 2024" className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+
+                      {/* Type */}
+                      <div className="grid grid-cols-3 gap-3">
+                        {(['HSC', 'SSC', 'Admission'] as const).map(t => (
+                          <button type="button" key={t} onClick={() => { setQType(t); setQSubject(''); }}
+                            className={`py-2.5 rounded-xl font-bold text-sm border-2 transition-all ${qType === t ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-emerald-400'}`}>
+                            {t}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Year */}
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Year</label>
+                        <select value={qYear} onChange={e => setQYear(e.target.value)}
+                          className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500">
+                          {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                        </select>
+                      </div>
+
+                      {qType !== 'Admission' ? (
+                        <>
+                          {/* Board */}
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Board</label>
+                            <select value={qBoard} onChange={e => setQBoard(e.target.value)}
+                              className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500">
+                              {BOARDS.map(b => <option key={b} value={b}>{b}</option>)}
+                            </select>
+                          </div>
+
+                          {/* Group */}
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Group</label>
+                            <div className="grid grid-cols-3 gap-3">
+                              {(['Science', 'Commerce', 'Arts'] as const).map(g => (
+                                <button type="button" key={g} onClick={() => { setQGroup(g); setQSubject(''); }}
+                                  className={`py-2.5 rounded-xl font-bold text-sm border-2 transition-all ${qGroup === g ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-emerald-400'}`}>
+                                  {g}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Subject dropdown */}
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                              Subject ({currentSubjects.length} subjects)
+                            </label>
+                            <select value={qSubject} onChange={e => setQSubject(e.target.value)}
+                              className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500">
+                              <option value="">-- Select Subject --</option>
+                              {currentSubjects.map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Category</label>
+                              <select value={qCategory} onChange={e => setQCategory(e.target.value)}
+                                className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500">
+                                <option>Engineering</option><option>Medical</option><option>University</option><option>GST</option>
+                              </select>
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Institution</label>
+                              <input type="text" value={qUniversity} onChange={e => setQUniversity(e.target.value)} placeholder="e.g. BUET"
+                                className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Subject Name</label>
+                            <input type="text" value={qSubject} onChange={e => setQSubject(e.target.value)} placeholder="e.g. Admission Test"
+                              className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                          </div>
+                        </>
+                      )}
+
+                      {/* MCQ / CQ */}
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Question Type</label>
+                        <div className="grid grid-cols-2 gap-3">
+                          {(['MCQ', 'CQ'] as const).map(t => (
+                            <button type="button" key={t} onClick={() => setQQuestionType(t)}
+                              className={`py-2.5 rounded-xl font-bold text-sm border-2 transition-all ${qQuestionType === t ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-emerald-400'}`}>
+                              {t}
+                            </button>
+                          ))}
                         </div>
                       </div>
 
-                      {newQuestion.type === 'Admission' ? (
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Category</label>
-                            <select value={newQuestion.category} onChange={e => setNewQuestion({ ...newQuestion, category: e.target.value as any })} className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500">
-                              <option value="Engineering">Engineering</option><option value="Medical">Medical</option><option value="University">University</option><option value="GST">GST</option>
-                            </select>
-                          </div>
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">University</label>
-                            <input type="text" value={newQuestion.university} onChange={e => setNewQuestion({ ...newQuestion, university: e.target.value })} placeholder="e.g. BUET" className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Board</label>
-                            <select value={newQuestion.board} onChange={e => setNewQuestion({ ...newQuestion, board: e.target.value })} className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500">
-                              <option value="">Select Board</option>
-                              {['Dhaka','Rajshahi','Mymensingh','Chittagong','Cumilla','Jashore','Barishal','Sylhet','Dinajpur'].map(b => <option key={b} value={b}>{b}</option>)}
-                            </select>
-                          </div>
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Group</label>
-                            <select value={newQuestion.group} onChange={e => setNewQuestion({ ...newQuestion, group: e.target.value })} className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500">
-                              <option value="">Select Group</option><option value="Science">Science</option><option value="Commerce">Commerce</option><option value="Arts">Arts</option>
-                            </select>
-                          </div>
+                      {/* Summary box */}
+                      {qSubject && (
+                        <div className="p-3 bg-emerald-50 dark:bg-emerald-900/10 rounded-xl border border-emerald-100 dark:border-emerald-900/20 text-xs text-emerald-700 dark:text-emerald-400 font-medium">
+                          📋 {qType} {qYear} • {qType !== 'Admission' ? `${qBoard} Board • ${qGroup} • ` : `${qCategory} • `}{qSubject} • {qQuestionType}
                         </div>
                       )}
 
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Subject</label>
-                          <input type="text" value={newQuestion.subject} onChange={e => setNewQuestion({ ...newQuestion, subject: e.target.value })} placeholder="e.g. Bangla" className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">MCQ / CQ</label>
-                          <select value={newQuestion.questionType} onChange={e => setNewQuestion({ ...newQuestion, questionType: e.target.value as any })} className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500">
-                            <option value="MCQ">MCQ</option><option value="CQ">CQ</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      {/* ── Multiple Image Upload ── */}
+                      {/* Image upload */}
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
-                            Question Images ({(newQuestion.imageUrls || []).length} uploaded)
-                          </label>
-                          <span className="text-xs text-zinc-400">Add as many pages as needed</span>
+                        <div className="flex justify-between items-center">
+                          <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Question Images ({qImageUrls.length} uploaded)</label>
+                          <span className="text-xs text-zinc-400">Upload all pages</span>
                         </div>
 
-                        {/* Uploaded images preview */}
-                        {(newQuestion.imageUrls || []).length > 0 && (
-                          <div className="grid grid-cols-3 gap-3 mb-3">
-                            {(newQuestion.imageUrls || []).map((url, i) => (
+                        {qImageUrls.length > 0 && (
+                          <div className="grid grid-cols-3 gap-2 mb-2">
+                            {qImageUrls.map((url, i) => (
                               <div key={i} className="relative group aspect-video rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800">
-                                <img src={url} alt={`Page ${i + 1}`} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                <img src={url} className="w-full h-full object-cover" referrerPolicy="no-referrer" alt={`Page ${i+1}`} />
                                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                  <button type="button" onClick={() => removeQuestionImage(i)} className="p-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700">
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
+                                  <button type="button" onClick={() => removeImage(i)} className="p-1.5 bg-red-600 text-white rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
                                 </div>
-                                <div className="absolute bottom-1 left-1 bg-black/60 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
-                                  Page {i + 1}
-                                </div>
+                                <div className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">Page {i+1}</div>
                               </div>
                             ))}
                           </div>
                         )}
 
-                        {/* Add more images button */}
                         <label className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl hover:border-emerald-500 transition-colors cursor-pointer">
-                          {uploadingImageIndex !== null
-                            ? <><Loader2 className="w-5 h-5 animate-spin text-emerald-600" /><span className="text-sm text-zinc-500">Uploading page {uploadingImageIndex + 1}...</span></>
-                            : <><Upload className="w-5 h-5 text-zinc-400" /><span className="text-sm text-zinc-500">+ Add image/page</span></>
-                          }
-                          <input type="file" className="hidden" onChange={handleAddQuestionImage} accept="image/*" disabled={uploadingImageIndex !== null} />
+                          {uploadingIdx !== null
+                            ? <><Loader2 className="w-5 h-5 animate-spin text-emerald-600" /><span className="text-sm text-zinc-500">Uploading page {uploadingIdx + 1}...</span></>
+                            : <><Upload className="w-5 h-5 text-zinc-400" /><span className="text-sm text-zinc-500">+ Add image / page</span></>}
+                          <input type="file" className="hidden" onChange={handleAddImage} accept="image/*" disabled={uploadingIdx !== null} />
                         </label>
-                        <p className="text-xs text-zinc-400 text-center">Upload multiple images if the question paper has multiple pages</p>
+                        <p className="text-xs text-zinc-400 text-center">Upload multiple images if the question has multiple pages</p>
                       </div>
 
-                      <div className="flex gap-4 pt-4">
-                        <button type="button" onClick={() => setShowQuestionForm(false)} className="flex-1 py-3 border border-zinc-200 dark:border-zinc-800 rounded-xl font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">Cancel</button>
-                        <button type="submit" disabled={isUploading || uploadingImageIndex !== null || (newQuestion.imageUrls || []).length === 0 || !newQuestion.subject}
-                          className="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700 transition-colors disabled:opacity-50">
-                          {isUploading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : `Upload Question (${(newQuestion.imageUrls || []).length} image${(newQuestion.imageUrls || []).length !== 1 ? 's' : ''})`}
+                      <div className="flex gap-4 pt-2">
+                        <button type="button" onClick={resetQuestionForm} className="flex-1 py-3 border border-zinc-200 dark:border-zinc-800 rounded-xl font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800">Cancel</button>
+                        <button type="submit" disabled={isUploading || uploadingIdx !== null || qImageUrls.length === 0 || !qSubject}
+                          className="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700 disabled:opacity-50">
+                          {isUploading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : `✅ Upload (${qImageUrls.length} image${qImageUrls.length !== 1 ? 's' : ''})`}
                         </button>
                       </div>
                     </form>
@@ -393,25 +421,23 @@ export const Admin: React.FC = () => {
               )}
 
               {questions.length === 0 && <p className="text-center py-12 text-zinc-400">No questions uploaded yet.</p>}
-              <div className="grid grid-cols-1 gap-4">
-                {questions.map((q) => (
-                  <div key={q.id} className="p-6 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 flex justify-between items-center group">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-white dark:bg-zinc-900 rounded-xl flex items-center justify-center relative">
-                        <FileText className="w-6 h-6 text-emerald-600" />
+              <div className="grid grid-cols-1 gap-3">
+                {questions.map(q => (
+                  <div key={q.id} className="p-5 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 flex justify-between items-center group">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-white dark:bg-zinc-900 rounded-xl flex items-center justify-center relative">
+                        <FileText className="w-5 h-5 text-emerald-600" />
                         {(q.imageUrls?.length || 0) > 1 && (
-                          <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
-                            {q.imageUrls?.length}
-                          </span>
+                          <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center">{q.imageUrls?.length}</span>
                         )}
                       </div>
                       <div>
-                        <h4 className="font-bold text-zinc-900 dark:text-white">{q.subject} - {q.year}</h4>
-                        <p className="text-xs text-zinc-500">{q.type} • {q.university || q.board} • {q.questionType} • {q.imageUrls?.length || 1} page(s)</p>
+                        <h4 className="font-bold text-zinc-900 dark:text-white text-sm">{q.subject} — {q.year}</h4>
+                        <p className="text-xs text-zinc-500">{q.type} • {q.board || q.university} • {q.group} • {q.questionType} • {q.imageUrls?.length || 1} page(s)</p>
                       </div>
                     </div>
-                    <button onClick={() => deleteQuestion(q.id)} className="p-2 text-zinc-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100">
-                      <Trash2 className="w-5 h-5" />
+                    <button onClick={() => { if (confirm('Delete?')) deleteDoc(doc(db, 'questions', q.id)); }} className="p-2 text-zinc-300 hover:text-red-600 opacity-0 group-hover:opacity-100">
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 ))}
@@ -422,30 +448,23 @@ export const Admin: React.FC = () => {
           {/* SITE CONTENT */}
           {activeTab === 'content' && (
             <div className="space-y-12">
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Privacy Policy</h3>
-                <textarea className="w-full p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl min-h-[200px] outline-none focus:ring-2 focus:ring-emerald-500 text-sm" value={siteContent.privacy_policy?.text || ''} onChange={(e) => setSiteContent({ ...siteContent, privacy_policy: { text: e.target.value } })} placeholder="Write privacy policy here..." />
-                <button onClick={() => updateSiteContent('privacy_policy', siteContent.privacy_policy)} className="px-6 py-3 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700">Save Privacy Policy</button>
+                <textarea className="w-full p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl min-h-[200px] outline-none focus:ring-2 focus:ring-emerald-500 text-sm" value={siteContent.privacy_policy?.text || ''} onChange={e => setSiteContent({ ...siteContent, privacy_policy: { text: e.target.value } })} placeholder="Privacy policy..." />
+                <button onClick={() => setDoc(doc(db, 'site_content', 'privacy_policy'), siteContent.privacy_policy).then(() => alert('Saved!'))} className="px-6 py-3 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700">Save</button>
               </div>
-              <div className="space-y-6">
-                <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Contact Information</h3>
+              <div className="space-y-4">
+                <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Contact</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Email</label>
-                    <input type="text" className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none" value={siteContent.contact?.email || ''} onChange={(e) => setSiteContent({ ...siteContent, contact: { ...siteContent.contact, email: e.target.value } })} placeholder="contact@sarothi.com" />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Phone</label>
-                    <input type="text" className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none" value={siteContent.contact?.phone || ''} onChange={(e) => setSiteContent({ ...siteContent, contact: { ...siteContent.contact, phone: e.target.value } })} placeholder="+880XXXXXXXXXX" />
-                  </div>
+                  <input type="text" className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none" value={siteContent.contact?.email || ''} onChange={e => setSiteContent({ ...siteContent, contact: { ...siteContent.contact, email: e.target.value } })} placeholder="Email" />
+                  <input type="text" className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none" value={siteContent.contact?.phone || ''} onChange={e => setSiteContent({ ...siteContent, contact: { ...siteContent.contact, phone: e.target.value } })} placeholder="Phone" />
                 </div>
-                <textarea className="w-full p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl min-h-[100px] outline-none text-sm" value={siteContent.contact?.text || ''} onChange={(e) => setSiteContent({ ...siteContent, contact: { ...siteContent.contact, text: e.target.value } })} placeholder="Contact description..." />
-                <button onClick={() => updateSiteContent('contact', siteContent.contact)} className="px-6 py-3 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700">Save Contact Info</button>
+                <textarea className="w-full p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl min-h-[100px] outline-none text-sm" value={siteContent.contact?.text || ''} onChange={e => setSiteContent({ ...siteContent, contact: { ...siteContent.contact, text: e.target.value } })} placeholder="Contact description..." />
+                <button onClick={() => setDoc(doc(db, 'site_content', 'contact'), siteContent.contact).then(() => alert('Saved!'))} className="px-6 py-3 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700">Save Contact</button>
               </div>
             </div>
           )}
 
-          {/* USERS */}
           {activeTab === 'users' && (
             <div className="text-center py-20 text-zinc-500">
               <Users className="w-12 h-12 mx-auto mb-4 opacity-30" />
@@ -461,22 +480,16 @@ export const Admin: React.FC = () => {
           <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
             className="bg-white dark:bg-zinc-900 rounded-[2.5rem] p-8 w-full max-w-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl">
             <div className="flex justify-between items-center mb-6">
-              <h4 className="text-2xl font-black text-zinc-900 dark:text-white tracking-tighter">{editingUpdate ? 'Edit Update' : 'New Update'}</h4>
-              <button onClick={closeUpdateForm} className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800"><X className="w-5 h-5 text-zinc-500" /></button>
+              <h4 className="text-2xl font-black text-zinc-900 dark:text-white">{editingUpdate ? 'Edit Update' : 'New Update'}</h4>
+              <button onClick={closeUpdate} className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800"><X className="w-5 h-5" /></button>
             </div>
             <div className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Title *</label>
-                <input type="text" value={updateTitle} onChange={e => setUpdateTitle(e.target.value)} placeholder="e.g. BUET Admission 2025 Notice" className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Content *</label>
-                <textarea value={updateContent} onChange={e => setUpdateContent(e.target.value)} placeholder="Write the full update details..." rows={8} className="w-full p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-emerald-500 resize-none" />
-              </div>
-              <div className="flex gap-4 pt-2">
-                <button onClick={closeUpdateForm} className="flex-1 py-3 border border-zinc-200 dark:border-zinc-800 rounded-xl font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800">Cancel</button>
-                <button onClick={handleSaveUpdate} disabled={isSavingUpdate} className="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700 disabled:opacity-50 flex items-center justify-center gap-2">
-                  {isSavingUpdate ? <><Loader2 className="w-4 h-4 animate-spin" />Saving...</> : editingUpdate ? '✏️ Save Changes' : '📢 Publish Update'}
+              <input type="text" value={updateTitle} onChange={e => setUpdateTitle(e.target.value)} placeholder="Title *" className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+              <textarea value={updateContent} onChange={e => setUpdateContent(e.target.value)} placeholder="Content *" rows={8} className="w-full p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-emerald-500 resize-none" />
+              <div className="flex gap-4">
+                <button onClick={closeUpdate} className="flex-1 py-3 border border-zinc-200 dark:border-zinc-800 rounded-xl font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800">Cancel</button>
+                <button onClick={saveUpdate} disabled={isSavingUpdate} className="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700 disabled:opacity-50 flex items-center justify-center gap-2">
+                  {isSavingUpdate ? <><Loader2 className="w-4 h-4 animate-spin" />Saving...</> : editingUpdate ? '✏️ Save' : '📢 Publish'}
                 </button>
               </div>
             </div>
