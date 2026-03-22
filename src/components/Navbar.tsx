@@ -3,7 +3,7 @@ import { Sun, Moon, User as UserIcon, Bell, LogOut, Menu, X, ChevronDown } from 
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { auth, db } from '../firebase';
-import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, writeBatch, doc } from 'firebase/firestore';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { Notification } from '../types';
@@ -25,6 +25,7 @@ export const Navbar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // ── Theme ──
   useEffect(() => {
     if (isDark) {
       document.documentElement.classList.add('dark');
@@ -35,18 +36,46 @@ export const Navbar: React.FC = () => {
     }
   }, [isDark]);
 
+  // ── Notifications ──
   useEffect(() => {
     if (!user) return;
+    const recipientIds = isAdmin ? [user.uid, 'admin'] : [user.uid, 'admin'];
     const q = query(
       collection(db, 'notifications'),
-      where('recipientId', 'in', [user.uid, 'admin']),
+      where('recipientId', 'in', recipientIds),
       orderBy('createdAt', 'desc')
     );
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      setNotifications(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification)));
+      setNotifications(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Notification)));
     });
     return () => unsubscribe();
-  }, [user]);
+  }, [user, isAdmin]);
+
+  // ── Mark all notifications as read ──
+  const markAllRead = async () => {
+    const unread = notifications.filter(n => !n.read);
+    if (unread.length === 0) return;
+    try {
+      const batch = writeBatch(db);
+      unread.forEach(n => {
+        batch.update(doc(db, 'notifications', n.id), { read: true });
+      });
+      await batch.commit();
+    } catch (err) {
+      console.error('Mark as read error:', err);
+    }
+  };
+
+  // ── Mark single notification as read ──
+  const markOneRead = async (notifId: string) => {
+    try {
+      const batch = writeBatch(db);
+      batch.update(doc(db, 'notifications', notifId), { read: true });
+      await batch.commit();
+    } catch (err) {
+      console.error('Mark one read error:', err);
+    }
+  };
 
   const navLinks = [
     { name: 'Home', path: '/' },
@@ -68,7 +97,6 @@ export const Navbar: React.FC = () => {
 
           {/* ── Logo ── */}
           <Link to="/" className="flex items-center gap-2">
-            {/* SVG Logo — golden S with book style */}
             <div className="w-10 h-10 rounded-full flex items-center justify-center"
               style={{ background: 'linear-gradient(135deg, #D4A017 0%, #F5C842 50%, #A07810 100%)' }}>
               <span style={{
@@ -103,12 +131,10 @@ export const Navbar: React.FC = () => {
               onMouseEnter={() => setIsHscSscOpen(true)}
               onMouseLeave={() => setIsHscSscOpen(false)}
             >
-              <button
-                className={cn(
-                  "flex items-center gap-1 text-sm font-medium transition-colors hover:text-emerald-600 dark:hover:text-emerald-400",
-                  location.pathname === "/hsc-ssc" ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-600 dark:text-zinc-400"
-                )}
-              >
+              <button className={cn(
+                "flex items-center gap-1 text-sm font-medium transition-colors hover:text-emerald-600 dark:hover:text-emerald-400",
+                location.pathname === "/hsc-ssc" ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-600 dark:text-zinc-400"
+              )}>
                 HSC/SSC <ChevronDown className={cn("w-4 h-4 transition-transform", isHscSscOpen && "rotate-180")} />
               </button>
               {isHscSscOpen && (
@@ -147,51 +173,90 @@ export const Navbar: React.FC = () => {
               }
             </button>
 
-            {/* Notifications */}
+            {/* ── Notifications ── */}
             {user && (
               <div className="relative">
                 <button
-                  onClick={() => setIsNotifOpen(!isNotifOpen)}
+                  onClick={() => {
+                    setIsNotifOpen(!isNotifOpen);
+                    setIsProfileOpen(false);
+                  }}
                   className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors relative"
                 >
                   <Bell className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
                   {unreadCount > 0 && (
                     <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white dark:border-zinc-900">
-                      {unreadCount}
+                      {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                   )}
                 </button>
+
                 {isNotifOpen && (
                   <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl py-2 max-h-96 overflow-y-auto z-[60]">
-                    <div className="px-4 py-2 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center">
-                      <span className="text-sm font-bold">Notifications</span>
+                    {/* Header */}
+                    <div className="px-4 py-2 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center sticky top-0 bg-white dark:bg-zinc-900">
+                      <span className="text-sm font-bold text-zinc-900 dark:text-white">
+                        Notifications {unreadCount > 0 && <span className="text-red-500">({unreadCount})</span>}
+                      </span>
                       {unreadCount > 0 && (
-                        <button className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest">
+                        <button
+                          onClick={markAllRead}
+                          className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest hover:text-emerald-700 hover:underline transition-colors"
+                        >
                           Mark all read
                         </button>
                       )}
                     </div>
+
+                    {/* Notification list */}
                     {notifications.length > 0 ? notifications.map(n => (
-                      <div key={n.id} className={cn(
-                        "px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors border-b border-zinc-50 dark:border-zinc-800 last:border-0",
-                        !n.read && "bg-emerald-50/30 dark:bg-emerald-900/10"
-                      )}>
-                        <p className="text-sm font-bold text-zinc-900 dark:text-white">{n.title}</p>
-                        <p className="text-xs text-zinc-500 mt-1">{n.message}</p>
+                      <div
+                        key={n.id}
+                        onClick={() => markOneRead(n.id)}
+                        className={cn(
+                          "px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors border-b border-zinc-50 dark:border-zinc-800 last:border-0 cursor-pointer",
+                          !n.read && "bg-emerald-50/50 dark:bg-emerald-900/10"
+                        )}
+                      >
+                        <div className="flex items-start gap-2">
+                          {!n.read && (
+                            <div className="w-2 h-2 bg-emerald-500 rounded-full flex-shrink-0 mt-1.5" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className={cn(
+                              "text-sm text-zinc-900 dark:text-white",
+                              !n.read ? "font-bold" : "font-medium"
+                            )}>{n.title}</p>
+                            <p className="text-xs text-zinc-500 mt-0.5 line-clamp-2">{n.message}</p>
+                            {n.createdAt?.seconds && (
+                              <p className="text-[10px] text-zinc-400 mt-1">
+                                {new Date(n.createdAt.seconds * 1000).toLocaleString('en-BD', {
+                                  day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+                                })}
+                              </p>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     )) : (
-                      <div className="p-8 text-center text-zinc-400 text-sm">No notifications</div>
+                      <div className="p-8 text-center text-zinc-400 text-sm">
+                        <Bell className="w-8 h-8 mx-auto mb-2 opacity-20" />
+                        No notifications yet
+                      </div>
                     )}
                   </div>
                 )}
               </div>
             )}
 
-            {/* Profile / Sign In */}
+            {/* ── Profile / Sign In ── */}
             {user ? (
               <div className="relative">
                 <button
-                  onClick={() => setIsProfileOpen(!isProfileOpen)}
+                  onClick={() => {
+                    setIsProfileOpen(!isProfileOpen);
+                    setIsNotifOpen(false);
+                  }}
                   className="flex items-center gap-2 p-1 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                 >
                   {profile?.photoURL ? (
