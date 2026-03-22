@@ -31,7 +31,7 @@ const uploadImage = async (file: File, path: string): Promise<string> => {
 };
 
 // ── Subject lists ──
-const SUBJECTS = {
+const SUBJECTS: Record<string, string[]> = {
   Science: [
     'Bangla 1st Paper', 'Bangla 2nd Paper',
     'English 1st Paper', 'English 2nd Paper',
@@ -64,8 +64,127 @@ const SUBJECTS = {
 };
 
 const BOARDS = ['Dhaka', 'Rajshahi', 'Mymensingh', 'Chittagong', 'Cumilla', 'Jashore', 'Barishal', 'Sylhet', 'Dinajpur'];
-const YEARS = Array.from({ length: 9 }, (_, i) => String(2026 - i)); // 2026 down to 2018
+const YEARS = Array.from({ length: 9 }, (_, i) => String(2026 - i));
 
+// ══════════════════════════════════════════
+// USER MANAGEMENT COMPONENT
+// ══════════════════════════════════════════
+const UserManagement: React.FC = () => {
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'users'), snap => {
+      setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setLoading(false);
+    });
+    return () => unsub();
+  }, []);
+
+  const filtered = users.filter(u =>
+    (u.name || '').toLowerCase().includes(search.toLowerCase()) ||
+    (u.email || '').toLowerCase().includes(search.toLowerCase())
+  );
+
+  if (loading) return (
+    <div className="flex justify-center py-12">
+      <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Registered Users</h3>
+        <span className="text-sm font-bold text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-3 py-1 rounded-full">
+          {users.length} total
+        </span>
+      </div>
+
+      {/* Search */}
+      <input
+        type="text"
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        placeholder="Search by name or email..."
+        className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500"
+      />
+
+      {/* User list */}
+      {filtered.length === 0 ? (
+        <div className="text-center py-16 text-zinc-400">
+          <Users className="w-12 h-12 mx-auto mb-4 opacity-20" />
+          <p>{search ? 'No users found.' : 'No users registered yet.'}</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filtered.map(user => (
+            <div key={user.id}
+              className="flex items-center gap-4 p-4 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 hover:border-emerald-400 transition-all">
+              {/* Avatar */}
+              <div className="flex-shrink-0">
+                {user.photoURL ? (
+                  <img src={user.photoURL} className="w-10 h-10 rounded-full object-cover border-2 border-zinc-200 dark:border-zinc-700" referrerPolicy="no-referrer" alt={user.name} />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center font-bold text-emerald-600 text-sm">
+                    {(user.name || user.email || 'U')[0].toUpperCase()}
+                  </div>
+                )}
+              </div>
+
+              {/* Name & Email */}
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-zinc-900 dark:text-white text-sm truncate">
+                  {user.name || 'No name set'}
+                </p>
+                <p className="text-xs text-zinc-500 truncate">{user.email}</p>
+              </div>
+
+              {/* Academic info */}
+              <div className="hidden sm:flex items-center gap-2 flex-wrap">
+                {user.group && (
+                  <span className="text-[10px] font-bold bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full">
+                    {user.group}
+                  </span>
+                )}
+                {user.hscBoard && (
+                  <span className="text-[10px] font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 px-2 py-0.5 rounded-full">
+                    {user.hscBoard}
+                  </span>
+                )}
+                {user.hscYear && (
+                  <span className="text-[10px] font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 px-2 py-0.5 rounded-full">
+                    HSC {user.hscYear}
+                  </span>
+                )}
+                {user.mobile && (
+                  <span className="text-[10px] font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 px-2 py-0.5 rounded-full">
+                    📱 {user.mobile}
+                  </span>
+                )}
+              </div>
+
+              {/* Role badge */}
+              <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full flex-shrink-0 ${
+                user.role === 'admin'
+                  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                  : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
+              }`}>
+                {user.role === 'admin' ? '⚙️ Admin' : '👤 User'}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ══════════════════════════════════════════
+// MAIN ADMIN COMPONENT
+// ══════════════════════════════════════════
 export const Admin: React.FC = () => {
   const { isAdmin, loading } = useAuth();
   const [activeTab, setActiveTab] = useState<'slideshow' | 'updates' | 'questions' | 'users' | 'content'>('slideshow');
@@ -107,7 +226,6 @@ export const Admin: React.FC = () => {
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-emerald-600" /></div>;
   if (!isAdmin) return <div className="text-center py-20 text-red-500 font-bold">Access Denied.</div>;
 
-  // ── Slide upload ──
   const handleSlideUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
     if (slides.length >= 6) { alert('Max 6 slides!'); return; }
@@ -117,7 +235,6 @@ export const Admin: React.FC = () => {
     setIsUploading(false);
   };
 
-  // ── Question image upload ──
   const handleAddImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
     const idx = qImageUrls.length;
@@ -165,7 +282,6 @@ export const Admin: React.FC = () => {
     setIsUploading(false);
   };
 
-  // ── Update CRUD ──
   const openNew = () => { setEditingUpdate(null); setUpdateTitle(''); setUpdateContent(''); setShowUpdateForm(true); };
   const openEdit = (u: Update) => { setEditingUpdate(u); setUpdateTitle(u.title); setUpdateContent(u.content || ''); setShowUpdateForm(true); };
   const closeUpdate = () => { setShowUpdateForm(false); setEditingUpdate(null); };
@@ -267,7 +383,6 @@ export const Admin: React.FC = () => {
                 <button onClick={() => setShowQuestionForm(true)} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg"><Plus className="w-4 h-4" /> Add Question</button>
               </div>
 
-              {/* Question Upload Modal */}
               {showQuestionForm && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                   <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
@@ -276,10 +391,7 @@ export const Admin: React.FC = () => {
                       <h4 className="text-2xl font-black text-zinc-900 dark:text-white">Upload Question</h4>
                       <button onClick={resetQuestionForm} className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800"><X className="w-5 h-5" /></button>
                     </div>
-
                     <form onSubmit={handleQuestionUpload} className="space-y-4">
-
-                      {/* Type */}
                       <div className="grid grid-cols-3 gap-3">
                         {(['HSC', 'SSC', 'Admission'] as const).map(t => (
                           <button type="button" key={t} onClick={() => { setQType(t); setQSubject(''); }}
@@ -288,28 +400,20 @@ export const Admin: React.FC = () => {
                           </button>
                         ))}
                       </div>
-
-                      {/* Year */}
                       <div className="space-y-1">
                         <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Year</label>
-                        <select value={qYear} onChange={e => setQYear(e.target.value)}
-                          className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500">
+                        <select value={qYear} onChange={e => setQYear(e.target.value)} className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500">
                           {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
                         </select>
                       </div>
-
                       {qType !== 'Admission' ? (
                         <>
-                          {/* Board */}
                           <div className="space-y-1">
                             <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Board</label>
-                            <select value={qBoard} onChange={e => setQBoard(e.target.value)}
-                              className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500">
+                            <select value={qBoard} onChange={e => setQBoard(e.target.value)} className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500">
                               {BOARDS.map(b => <option key={b} value={b}>{b}</option>)}
                             </select>
                           </div>
-
-                          {/* Group */}
                           <div className="space-y-1">
                             <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Group</label>
                             <div className="grid grid-cols-3 gap-3">
@@ -321,14 +425,9 @@ export const Admin: React.FC = () => {
                               ))}
                             </div>
                           </div>
-
-                          {/* Subject dropdown */}
                           <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
-                              Subject ({currentSubjects.length} subjects)
-                            </label>
-                            <select value={qSubject} onChange={e => setQSubject(e.target.value)}
-                              className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500">
+                            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Subject ({currentSubjects.length})</label>
+                            <select value={qSubject} onChange={e => setQSubject(e.target.value)} className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500">
                               <option value="">-- Select Subject --</option>
                               {currentSubjects.map(s => <option key={s} value={s}>{s}</option>)}
                             </select>
@@ -339,26 +438,21 @@ export const Admin: React.FC = () => {
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1">
                               <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Category</label>
-                              <select value={qCategory} onChange={e => setQCategory(e.target.value)}
-                                className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500">
+                              <select value={qCategory} onChange={e => setQCategory(e.target.value)} className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500">
                                 <option>Engineering</option><option>Medical</option><option>University</option><option>GST</option>
                               </select>
                             </div>
                             <div className="space-y-1">
                               <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Institution</label>
-                              <input type="text" value={qUniversity} onChange={e => setQUniversity(e.target.value)} placeholder="e.g. BUET"
-                                className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                              <input type="text" value={qUniversity} onChange={e => setQUniversity(e.target.value)} placeholder="e.g. BUET" className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
                             </div>
                           </div>
                           <div className="space-y-1">
                             <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Subject Name</label>
-                            <input type="text" value={qSubject} onChange={e => setQSubject(e.target.value)} placeholder="e.g. Admission Test"
-                              className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                            <input type="text" value={qSubject} onChange={e => setQSubject(e.target.value)} placeholder="e.g. Admission Test" className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
                           </div>
                         </>
                       )}
-
-                      {/* MCQ / CQ */}
                       <div className="space-y-1">
                         <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Question Type</label>
                         <div className="grid grid-cols-2 gap-3">
@@ -370,21 +464,16 @@ export const Admin: React.FC = () => {
                           ))}
                         </div>
                       </div>
-
-                      {/* Summary box */}
                       {qSubject && (
                         <div className="p-3 bg-emerald-50 dark:bg-emerald-900/10 rounded-xl border border-emerald-100 dark:border-emerald-900/20 text-xs text-emerald-700 dark:text-emerald-400 font-medium">
                           📋 {qType} {qYear} • {qType !== 'Admission' ? `${qBoard} Board • ${qGroup} • ` : `${qCategory} • `}{qSubject} • {qQuestionType}
                         </div>
                       )}
-
-                      {/* Image upload */}
                       <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                          <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Question Images ({qImageUrls.length} uploaded)</label>
+                          <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Images ({qImageUrls.length})</label>
                           <span className="text-xs text-zinc-400">Upload all pages</span>
                         </div>
-
                         {qImageUrls.length > 0 && (
                           <div className="grid grid-cols-3 gap-2 mb-2">
                             {qImageUrls.map((url, i) => (
@@ -398,21 +487,18 @@ export const Admin: React.FC = () => {
                             ))}
                           </div>
                         )}
-
                         <label className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl hover:border-emerald-500 transition-colors cursor-pointer">
                           {uploadingIdx !== null
-                            ? <><Loader2 className="w-5 h-5 animate-spin text-emerald-600" /><span className="text-sm text-zinc-500">Uploading page {uploadingIdx + 1}...</span></>
+                            ? <><Loader2 className="w-5 h-5 animate-spin text-emerald-600" /><span className="text-sm text-zinc-500">Uploading...</span></>
                             : <><Upload className="w-5 h-5 text-zinc-400" /><span className="text-sm text-zinc-500">+ Add image / page</span></>}
                           <input type="file" className="hidden" onChange={handleAddImage} accept="image/*" disabled={uploadingIdx !== null} />
                         </label>
-                        <p className="text-xs text-zinc-400 text-center">Upload multiple images if the question has multiple pages</p>
                       </div>
-
                       <div className="flex gap-4 pt-2">
                         <button type="button" onClick={resetQuestionForm} className="flex-1 py-3 border border-zinc-200 dark:border-zinc-800 rounded-xl font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800">Cancel</button>
                         <button type="submit" disabled={isUploading || uploadingIdx !== null || qImageUrls.length === 0 || !qSubject}
                           className="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700 disabled:opacity-50">
-                          {isUploading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : `✅ Upload (${qImageUrls.length} image${qImageUrls.length !== 1 ? 's' : ''})`}
+                          {isUploading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : `✅ Upload (${qImageUrls.length})`}
                         </button>
                       </div>
                     </form>
@@ -465,12 +551,9 @@ export const Admin: React.FC = () => {
             </div>
           )}
 
-          {activeTab === 'users' && (
-            <div className="text-center py-20 text-zinc-500">
-              <Users className="w-12 h-12 mx-auto mb-4 opacity-30" />
-              <p>User management coming soon...</p>
-            </div>
-          )}
+          {/* USERS ── এখন কাজ করবে! ── */}
+          {activeTab === 'users' && <UserManagement />}
+
         </div>
       </div>
 
