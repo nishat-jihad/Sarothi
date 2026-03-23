@@ -1,31 +1,48 @@
 @import "tailwindcss";
 @variant dark (&:where(.dark, .dark *));
+
 /* Smooth scrolling */
 html {
   scroll-behavior: smooth;
 }
+
 /* Smooth page transitions */
 * {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
 /* Prevent layout shift */
 img {
   content-visibility: auto;
 }
+
 /* Better tap targets on mobile */
 button, a {
   -webkit-tap-highlight-color: transparent;
 }
-/* Dot grid background */
-body {
+
+/* Dot grid background - applied to html so nothing can cover it */
+html {
+  scroll-behavior: smooth;
   background-color: #f8f8f8;
   background-image: radial-gradient(circle, #d0d0d0 1px, transparent 1px);
   background-size: 24px 24px;
 }
+
 /* Dark mode dot grid */
-.dark body {
+html.dark {
   background-color: #0f0f0f;
   background-image: radial-gradient(circle, #2a2a2a 1px, transparent 1px);
   background-size: 24px 24px;
+}
+
+/* Remove solid backgrounds from all page wrappers */
+body, #root {
+  background: transparent !important;
+}
+
+/* Force all min-h-screen divs to be transparent */
+.min-h-screen {
+  background: transparent !important;
 }
