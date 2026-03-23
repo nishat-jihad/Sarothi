@@ -17,3 +17,16 @@ img {
 button, a {
   -webkit-tap-highlight-color: transparent;
 }
+/* Dot grid background */
+body {
+  background-color: #f8f8f8;
+  background-image: radial-gradient(circle, #d0d0d0 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Dark mode dot grid */
+body.dark {
+  background-color: #0f0f0f;
+  background-image: radial-gradient(circle, #2a2a2a 1px, transparent 1px);
+  background-size: 24px 24px;
+}
