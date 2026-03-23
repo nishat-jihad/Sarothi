@@ -15,7 +15,7 @@ import { Contact } from './pages/Contact';
 import { Study } from './pages/Study';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="flex flex-col min-h-screen bg-white dark:bg-zinc-950 transition-colors duration-300">
+  <div className="flex flex-col min-h-screen transition-colors duration-300">
     <Navbar />
     <main className="flex-grow">{children}</main>
     <Footer />
