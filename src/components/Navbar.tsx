@@ -76,15 +76,14 @@ export const Navbar: React.FC = () => {
 
           {/* ── Corrected Logo Section ── */}
           <Link to="/" className="flex items-center gap-2.5 flex-shrink-0">
-            <img
-              src="/Sarothilogopro.png"
-              alt="Sarothi Logo"
-              className="w-10 h-10 object-contain"
-              onError={e => {
-                // Fallback to placeholder if image fails
-                (e.target as HTMLImageElement).src = "https://via.placeholder.com/40?text=S";
-              }}
-            />
+           <img
+  src="./Sarothilogopro.png"  // এখানে একটি ডট (.) যোগ করা হয়েছে
+  alt="Sarothi Logo"
+  className="w-10 h-10 object-contain"
+  onError={e => {
+    (e.target as HTMLImageElement).src = "https://via.placeholder.com/40?text=S";
+  }}
+/>
             <span className="text-xl font-bold text-zinc-900 dark:text-white hidden sm:block tracking-tighter">Sarothi</span>
           </Link>
 
