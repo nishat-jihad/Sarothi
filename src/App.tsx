@@ -7,8 +7,8 @@ import { Home } from './pages/Home';
 import { Login } from './pages/Login';
 import { Profile } from './pages/Profile';
 
-// নতুন ওভারহল অনুযায়ী ইমপোর্ট আপডেট
-import HSCPage from './pages/HSCPage'; // নতুন HSC/SSC ডাইনামিক পেজ
+// নতুন ওভারহল অনুযায়ী ইমপোর্ট
+import HSCPage from './pages/HSCPage'; 
 import AdmissionPage from './pages/AdmissionPage'; 
 import { Updates } from './pages/Updates';
 import { Admin } from './pages/Admin';
@@ -19,10 +19,10 @@ import { Study } from './pages/Study';
 import { StudyTips } from './pages/StudyTips';
 import { About } from './pages/About';
 
-// SECTION E: YouTube API লোড করার হুক
+// YouTube API লোড করার হুক
 function useYouTubeAPI() {
   useEffect(() => {
-    if (document.getElementById('yt-iframe-api')) return; 
+    if (document.getElementById('yt-iframe-api')) return;
     const tag = document.createElement('script');
     tag.id = 'yt-iframe-api';
     tag.src = 'https://www.youtube.com/iframe_api';
@@ -52,7 +52,7 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 export default function App() {
-  // ভিডিও প্লেয়ারের জন্য API কল করা হলো
+  // ভিডিও প্লেয়ারের জন্য API কল
   useYouTubeAPI();
 
   return (
@@ -63,11 +63,9 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             
-            {/* SECTION B: নতুন রাউট সেটআপ */}
-            {/* পুরোনো HSCSSC রাউট সরিয়ে এই দুটি যোগ করা হয়েছে */}
+            {/* নতুন ডাইনামিক রাউটসমূহ */}
             <Route path="/hsc" element={<HSCPage classLevel="HSC" />} />
             <Route path="/ssc" element={<HSCPage classLevel="SSC" />} />
-            
             <Route path="/admission" element={<AdmissionPage />} />
             
             <Route path="/updates" element={<Updates />} />
@@ -79,6 +77,7 @@ export default function App() {
             
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             
+            {/* অ্যাডমিন রাউটসমূহ */}
             <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
             <Route path="/admin/add-lecture" element={<AdminRoute><AddLecture /></AdminRoute>} />
             
