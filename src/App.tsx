@@ -7,9 +7,11 @@ import { Home } from './pages/Home';
 import { Login } from './pages/Login';
 import { Profile } from './pages/Profile';
 import { HSCSSC } from './pages/HSCSSC';
-import { Admission } from './pages/Admission';
+// Admission ও Admin এর জন্য নতুন ইমপোর্ট পাথ চেক করুন
+import AdmissionPage from './pages/AdmissionPage'; 
 import { Updates } from './pages/Updates';
 import { Admin } from './pages/Admin';
+import AddLecture from './pages/admin/AddLecture'; // নতুন ফোল্ডার পাথ অনুযায়ী
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import { Contact } from './pages/Contact';
 import { Study } from './pages/Study';
@@ -45,15 +47,23 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/hsc-ssc" element={<HSCSSC />} />
-            <Route path="/admission" element={<Admission />} />
+            
+            {/* পুরোনো Admission এর বদলে নতুন AdmissionPage ব্যবহার করুন */}
+            <Route path="/admission" element={<AdmissionPage />} />
+            
             <Route path="/updates" element={<Updates />} />
             <Route path="/study" element={<Study />} />
             <Route path="/study-tips" element={<StudyTips />} />
             <Route path="/about" element={<About />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/contact" element={<Contact />} />
+            
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            
+            {/* অ্যাডমিন সেকশনে নতুন AddLecture রাউট যোগ করা হয়েছে */}
             <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
+            <Route path="/admin/add-lecture" element={<AdminRoute><AddLecture /></AdminRoute>} />
+            
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </Layout>
