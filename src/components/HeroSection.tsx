@@ -1,102 +1,76 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { db } from '../firebase';
+import { SlideshowImage } from '../types';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-export default function HeroSection() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const mouseRef  = useRef({ x: 0, y: 0 });
-  const starsRef  = useRef<Array<{ x: number; y: number; r: number; vx: number; vy: number; alpha: number }>>([]);
+const HeroSection: React.FC = () => {
+  const [slides, setSlides] = useState<SlideshowImage[]>([]);
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const q = query(collection(db, 'slideshow'), orderBy('order', 'asc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const slideData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SlideshowImage));
+      setSlides(slideData);
+    });
+    return () => unsubscribe();
+  }, []);
 
-    const resize = () => {
-      canvas.width  = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
-    };
-    resize();
-    window.addEventListener('resize', resize);
-
-    // স্টারের সংখ্যা এবং প্রোপার্টি সেট করা
-    starsRef.current = Array.from({ length: 220 }, () => ({
-      x:     Math.random() * canvas.width,
-      y:     Math.random() * canvas.height,
-      r:     Math.random() * 1.8 + 0.3,
-      vx:    (Math.random() - 0.5) * 0.15,
-      vy:    (Math.random() - 0.5) * 0.15,
-      alpha: Math.random() * 0.6 + 0.4,
-    }));
-
-    const ctx = canvas.getContext('2d')!;
-    let frameId: number;
-
-    function draw() {
-      const w = canvas!.width;
-      const h = canvas!.height;
-      const mx = mouseRef.current.x / w - 0.5;
-      const my = mouseRef.current.y / h - 0.5;
-
-      ctx.clearRect(0, 0, w, h);
-
-      // ব্যাকগ্রাউন্ড গ্রাডিয়েন্ট
-      const bg = ctx.createRadialGradient(w * 0.5, h * 0.4, 0, w * 0.5, h * 0.4, Math.max(w, h));
-      bg.addColorStop(0,   '#0a1628');
-      bg.addColorStop(0.4, '#060d1f');
-      bg.addColorStop(1,   '#020408');
-      ctx.fillStyle = bg;
-      ctx.fillRect(0, 0, w, h);
-
-      // স্টার অ্যানিমেশন (প্যারালাক্স ইফেক্টসহ)
-      starsRef.current.forEach(star => {
-        star.x += star.vx + mx * 0.4 * star.r;
-        star.y += star.vy + my * 0.4 * star.r;
-
-        if (star.x < 0)  star.x = w;
-        if (star.x > w)  star.x = 0;
-        if (star.y < 0)  star.y = h;
-        if (star.y > h)  star.y = 0;
-
-        star.alpha += (Math.random() - 0.5) * 0.02;
-        star.alpha = Math.max(0.2, Math.min(1, star.alpha));
-
-        ctx.beginPath();
-        ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255, 255, 255, ${star.alpha})`;
-        ctx.fill();
-      });
-
-      frameId = requestAnimationFrame(draw);
+  useEffect(() => {
+    if (slides.length > 0) {
+      const timer = setInterval(() => {
+        setCurrentSlide((prev) => (prev + 1) % slides.length);
+      }, 5000);
+      return () => clearInterval(timer);
     }
+  }, [slides]);
 
-    frameId = requestAnimationFrame(draw);
-    return () => {
-      cancelAnimationFrame(frameId);
-      window.removeEventListener('resize', resize);
-    };
-  }, []);
-
-  useEffect(() => {
-    const onMove = (e: MouseEvent) => { mouseRef.current = { x: e.clientX, y: e.clientY }; };
-    window.addEventListener('mousemove', onMove);
-    return () => window.removeEventListener('mousemove', onMove);
-  }, []);
+  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % slides.length);
+  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
 
   return (
-    <section className="relative w-full overflow-hidden" style={{ minHeight: '520px' }}>
-      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" style={{ background: '#020408' }} />
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#020408]/80" />
+    <section className="relative h-[60vh] md:h-[80vh] w-full overflow-hidden bg-zinc-100 dark:bg-zinc-900">
+      <AnimatePresence mode="wait">
+        {slides.length > 0 ? (
+          <motion.img
+            key={slides[currentSlide].id}
+            src={slides[currentSlide].url}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8 }}
+            className="absolute inset-0 w-full h-full object-cover"
+            referrerPolicy="no-referrer"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-zinc-400">
+            No images uploaded yet.
+          </div>
+        )}
+      </AnimatePresence>
 
-      <div className="relative z-10 flex flex-col items-center justify-center text-center px-6 py-24 gap-6">
-        <h1 className="font-extrabold leading-tight max-w-3xl text-white" style={{ fontSize: 'clamp(1.8rem, 5vw, 3.2rem)' }}>
-          Be a witness to our top notch <span className="text-emerald-400">'SAROTHI'</span> experience yourself
-        </h1>
-        <p className="max-w-2xl text-gray-300 text-lg">
-          Instead of wandering from place to place, get all your study materials in one place — just at <span className="text-blue-400 font-bold">'SAROTHI'</span>
-        </p>
-        <div className="flex flex-wrap gap-4 mt-2">
-          <a href="/hsc" className="bg-emerald-500 hover:bg-emerald-400 text-white font-bold px-6 py-3 rounded-2xl shadow-lg transition-all">📚 HSC / SSC Classes</a>
-          <a href="/admission" className="bg-white/10 hover:bg-white/20 text-white font-bold px-6 py-3 rounded-2xl border border-white/20 backdrop-blur-sm transition-all">🎓 Admission Classes</a>
-        </div>
+      {/* Indicators */}
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2">
+        {slides.map((_, idx) => (
+          <button
+            key={idx}
+            onClick={() => setCurrentSlide(idx)}
+            className={`w-2 h-2 rounded-full transition-all ${idx === currentSlide ? 'bg-white w-6' : 'bg-white/50'}`}
+          />
+        ))}
       </div>
+
+      {/* Controls */}
+      <button onClick={prevSlide} className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full backdrop-blur-sm transition-colors">
+        <ChevronLeft className="w-6 h-6" />
+      </button>
+      <button onClick={nextSlide} className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full backdrop-blur-sm transition-colors">
+        <ChevronRight className="w-6 h-6" />
+      </button>
     </section>
   );
-}
+};
+
+export default HeroSection;
