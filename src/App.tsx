@@ -7,7 +7,7 @@ import { Home } from './pages/Home';
 import { Login } from './pages/Login';
 import { Profile } from './pages/Profile';
 
-// নতুন ওভারহল অনুযায়ী ইমপোর্ট
+// নতুন ইমপোর্টসমূহ (নিশ্চিত করুন এই ফাইলগুলো pages ফোল্ডারে আছে)
 import HSCPage from './pages/HSCPage'; 
 import AdmissionPage from './pages/AdmissionPage'; 
 import { Updates } from './pages/Updates';
@@ -15,11 +15,8 @@ import { Admin } from './pages/Admin';
 import AddLecture from './pages/admin/AddLecture';
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import { Contact } from './pages/Contact';
-import { Study } from './pages/Study';
-import { StudyTips } from './pages/StudyTips';
-import { About } from './pages/About';
 
-// YouTube API লোড করার হুক
+// YouTube API হুক (আলাদা ফাইল না থাকলে এখানেই রাখা হলো)
 function useYouTubeAPI() {
   useEffect(() => {
     if (document.getElementById('yt-iframe-api')) return;
@@ -39,21 +36,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   </div>
 );
 
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, loading } = useAuth();
-  if (loading) return null;
-  return user ? <>{children}</> : <Navigate to="/login" />;
-};
-
-const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAdmin, loading } = useAuth();
-  if (loading) return null;
-  return isAdmin ? <>{children}</> : <Navigate to="/" />;
-};
-
 export default function App() {
-  // ভিডিও প্লেয়ারের জন্য API কল
-  useYouTubeAPI();
+  useYouTubeAPI(); // Claude এর নির্দেশনা অনুযায়ী যুক্ত করা হলো
 
   return (
     <AuthProvider>
@@ -69,17 +53,13 @@ export default function App() {
             <Route path="/admission" element={<AdmissionPage />} />
             
             <Route path="/updates" element={<Updates />} />
-            <Route path="/study" element={<Study />} />
-            <Route path="/study-tips" element={<StudyTips />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             
-            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            
-            {/* অ্যাডমিন রাউটসমূহ */}
-            <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
-            <Route path="/admin/add-lecture" element={<AdminRoute><AddLecture /></AdminRoute>} />
+            {/* প্রোফাইল এবং অ্যাডমিন */}
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/admin" element={<Admin />} />
+            <Route path="/admin/add-lecture" element={<AddLecture />} />
             
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
