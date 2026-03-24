@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sun, Moon, User as UserIcon, Bell, LogOut, Menu, X, ChevronDown, Phone, Info, Rocket, Lightbulb } from 'lucide-react';
+import { Sun, Moon, User as UserIcon, Bell, LogOut, Menu, X, ChevronDown, Phone, Rocket } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { auth, db } from '../firebase';
@@ -8,17 +8,18 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { Notification } from '../types';
 
+// লোগো ইমপোর্ট (নিশ্চিত করুন image টি src/assets ফোল্ডারে আছে)
+import logoImage from '../assets/Sarothilogopro.png'; 
+
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// ── Active indicator triangle ──
 const ActiveTriangle = () => (
   <span className="absolute -bottom-[17px] left-1/2 -translate-x-1/2 w-0 h-0 pointer-events-none"
     style={{ borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '7px solid #18181b' }} />
 );
 
-// Dark mode triangle
 const ActiveTriangleDark = () => (
   <span className="absolute -bottom-[17px] left-1/2 -translate-x-1/2 w-0 h-0 pointer-events-none dark:block hidden"
     style={{ borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '7px solid #f4f4f5' }} />
@@ -74,35 +75,23 @@ export const Navbar: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
 
-          {/* ── Logo ── */}
-          <Link to="/" className="flex items-center gap-2.5 flex-shrink-0">
+          {/* ── Logo Section Updated ── */}
+          <Link to="/" className="flex items-center gap-2 flex-shrink-0">
             <img
-              src="/sarothi-logo.png"
+              src={logoImage}
               alt="Sarothi Logo"
-              className="w-10 h-10 rounded-full object-cover"
-              onError={e => {
-                // fallback to golden S
-                (e.target as HTMLImageElement).style.display = 'none';
-                (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
-              }}
+              className="w-10 h-10 object-contain dark:invert-[0.1]" 
             />
-            <div className="hidden w-10 h-10 rounded-full flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg, #D4A017 0%, #F5C842 50%, #A07810 100%)' }}>
-              <span style={{ fontFamily: 'Georgia, serif', fontSize: '22px', fontWeight: '900', color: '#fff', lineHeight: 1 }}>S</span>
-            </div>
             <span className="text-xl font-bold text-zinc-900 dark:text-white hidden sm:block tracking-tighter">Sarothi</span>
           </Link>
 
           {/* ── Desktop Nav ── */}
           <div className="hidden md:flex items-center gap-1">
-
-            {/* Home */}
             <Link to="/" className={cn("relative px-3 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800/50", isActive('/') ? "text-zinc-900 dark:text-white font-bold" : "text-zinc-600 dark:text-zinc-400")}>
               Home
               {isActive('/') && <><ActiveTriangle /><ActiveTriangleDark /></>}
             </Link>
 
-            {/* HSC/SSC */}
             <div className="relative" onMouseEnter={() => setIsHscSscOpen(true)} onMouseLeave={() => setIsHscSscOpen(false)}>
               <button className={cn("relative flex items-center gap-1 px-3 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800/50", isHscActive ? "text-zinc-900 dark:text-white font-bold" : "text-zinc-600 dark:text-zinc-400")}>
                 HSC/SSC <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", isHscSscOpen && "rotate-180")} />
@@ -116,13 +105,11 @@ export const Navbar: React.FC = () => {
               )}
             </div>
 
-            {/* Admission */}
             <Link to="/admission" className={cn("relative px-3 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800/50", isActive('/admission') ? "text-zinc-900 dark:text-white font-bold" : "text-zinc-600 dark:text-zinc-400")}>
               Admission
               {isActive('/admission') && <><ActiveTriangle /><ActiveTriangleDark /></>}
             </Link>
 
-            {/* Study Dropdown */}
             <div className="relative" onMouseEnter={() => setIsStudyOpen(true)} onMouseLeave={() => setIsStudyOpen(false)}>
               <button className={cn("relative flex items-center gap-1 px-3 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800/50", isStudyActive ? "text-zinc-900 dark:text-white font-bold" : "text-zinc-600 dark:text-zinc-400")}>
                 Study <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", isStudyOpen && "rotate-180")} />
@@ -148,36 +135,29 @@ export const Navbar: React.FC = () => {
               )}
             </div>
 
-            {/* Updates */}
             <Link to="/updates" className={cn("relative px-3 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800/50", isActive('/updates') ? "text-zinc-900 dark:text-white font-bold" : "text-zinc-600 dark:text-zinc-400")}>
               Updates
               {isActive('/updates') && <><ActiveTriangle /><ActiveTriangleDark /></>}
             </Link>
 
-            {/* About Us — text only */}
             <Link to="/about" className={cn("relative px-3 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800/50", isActive('/about') ? "text-zinc-900 dark:text-white font-bold" : "text-zinc-600 dark:text-zinc-400")}>
               About Us
               {isActive('/about') && <><ActiveTriangle /><ActiveTriangleDark /></>}
             </Link>
 
-            {/* Contact Us — phone icon */}
             <Link to="/contact" className={cn("relative flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800/50", isActive('/contact') ? "text-zinc-900 dark:text-white font-bold" : "text-zinc-600 dark:text-zinc-400")}>
               <Phone className="w-3.5 h-3.5" />
               Contact
               {isActive('/contact') && <><ActiveTriangle /><ActiveTriangleDark /></>}
             </Link>
-
           </div>
 
           {/* ── Right Section ── */}
           <div className="flex items-center gap-2">
-
-            {/* Theme */}
             <button onClick={() => setIsDark(!isDark)} className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
               {isDark ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-zinc-600" />}
             </button>
 
-            {/* Notifications */}
             {user && (
               <div className="relative">
                 <button onClick={() => { setIsNotifOpen(!isNotifOpen); setIsProfileOpen(false); }}
@@ -215,7 +195,6 @@ export const Navbar: React.FC = () => {
               </div>
             )}
 
-            {/* Get Started — only for non-logged-in users */}
             {!user && (
               <Link to="/login"
                 className="px-4 py-2 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm font-bold rounded-lg transition-all hidden md:flex items-center gap-1.5">
@@ -224,7 +203,6 @@ export const Navbar: React.FC = () => {
               </Link>
             )}
 
-            {/* Profile */}
             {user ? (
               <div className="relative">
                 <button onClick={() => { setIsProfileOpen(!isProfileOpen); setIsNotifOpen(false); }}
@@ -242,7 +220,6 @@ export const Navbar: React.FC = () => {
                     <div className="px-4 py-2.5 border-b border-zinc-100 dark:border-zinc-800">
                       <p className="text-sm font-semibold text-zinc-900 dark:text-white truncate">{profile?.displayName || user.displayName || 'User'}</p>
                       <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{user.email}</p>
-                      {/* Role badge */}
                       <span className={`inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${isAdmin ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'}`}>
                         {isAdmin ? '⚙️ Admin' : '👤 User'}
                       </span>
@@ -261,7 +238,6 @@ export const Navbar: React.FC = () => {
               </Link>
             )}
 
-            {/* Mobile toggle */}
             <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="md:hidden p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
               {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
