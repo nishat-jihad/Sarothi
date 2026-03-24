@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { Navbar } from './components/Navbar';
@@ -6,17 +6,30 @@ import { Footer } from './components/Footer';
 import { Home } from './pages/Home';
 import { Login } from './pages/Login';
 import { Profile } from './pages/Profile';
-import { HSCSSC } from './pages/HSCSSC';
-// Admission ও Admin এর জন্য নতুন ইমপোর্ট পাথ চেক করুন
+
+// নতুন ওভারহল অনুযায়ী ইমপোর্ট আপডেট
+import HSCPage from './pages/HSCPage'; // নতুন HSC/SSC ডাইনামিক পেজ
 import AdmissionPage from './pages/AdmissionPage'; 
 import { Updates } from './pages/Updates';
 import { Admin } from './pages/Admin';
-import AddLecture from './pages/admin/AddLecture'; // নতুন ফোল্ডার পাথ অনুযায়ী
+import AddLecture from './pages/admin/AddLecture';
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import { Contact } from './pages/Contact';
 import { Study } from './pages/Study';
 import { StudyTips } from './pages/StudyTips';
 import { About } from './pages/About';
+
+// SECTION E: YouTube API লোড করার হুক
+function useYouTubeAPI() {
+  useEffect(() => {
+    if (document.getElementById('yt-iframe-api')) return; 
+    const tag = document.createElement('script');
+    tag.id = 'yt-iframe-api';
+    tag.src = 'https://www.youtube.com/iframe_api';
+    tag.async = true;
+    document.head.appendChild(tag);
+  }, []);
+}
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div className="flex flex-col min-h-screen transition-colors duration-300">
@@ -39,6 +52,9 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 export default function App() {
+  // ভিডিও প্লেয়ারের জন্য API কল করা হলো
+  useYouTubeAPI();
+
   return (
     <AuthProvider>
       <Router>
@@ -46,9 +62,12 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/hsc-ssc" element={<HSCSSC />} />
             
-            {/* পুরোনো Admission এর বদলে নতুন AdmissionPage ব্যবহার করুন */}
+            {/* SECTION B: নতুন রাউট সেটআপ */}
+            {/* পুরোনো HSCSSC রাউট সরিয়ে এই দুটি যোগ করা হয়েছে */}
+            <Route path="/hsc" element={<HSCPage classLevel="HSC" />} />
+            <Route path="/ssc" element={<HSCPage classLevel="SSC" />} />
+            
             <Route path="/admission" element={<AdmissionPage />} />
             
             <Route path="/updates" element={<Updates />} />
@@ -60,7 +79,6 @@ export default function App() {
             
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             
-            {/* অ্যাডমিন সেকশনে নতুন AddLecture রাউট যোগ করা হয়েছে */}
             <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
             <Route path="/admin/add-lecture" element={<AdminRoute><AddLecture /></AdminRoute>} />
             
