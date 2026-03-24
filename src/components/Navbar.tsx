@@ -29,7 +29,6 @@ export const Navbar: React.FC = () => {
   const [isDark, setIsDark] = useState(() => localStorage.getItem('theme') === 'dark');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isHscSscOpen, setIsHscSscOpen] = useState(false);
-  const [isStudyOpen, setIsStudyOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -66,7 +65,6 @@ export const Navbar: React.FC = () => {
   const unreadCount = notifications.filter(n => !n.read).length;
 
   const isActive = (path: string) => location.pathname === path;
-  const isStudyActive = location.pathname === '/study' || location.pathname === '/study-tips';
   const isHscActive = location.pathname === '/hsc-ssc';
 
   return (
@@ -74,16 +72,16 @@ export const Navbar: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
 
-          {/* ── Corrected Logo Section ── */}
+          {/* ── Logo ── */}
           <Link to="/" className="flex items-center gap-2.5 flex-shrink-0">
-           <img
-  src="./Sarothilogopro.png"  // এখানে একটি ডট (.) যোগ করা হয়েছে
-  alt="Sarothi Logo"
-  className="w-10 h-10 object-contain"
-  onError={e => {
-    (e.target as HTMLImageElement).src = "https://via.placeholder.com/40?text=S";
-  }}
-/>
+            <img
+              src="./Sarothilogopro.png"
+              alt="Sarothi Logo"
+              className="w-10 h-10 object-contain"
+              onError={e => {
+                (e.target as HTMLImageElement).src = "https://via.placeholder.com/40?text=S";
+              }}
+            />
             <span className="text-xl font-bold text-zinc-900 dark:text-white hidden sm:block tracking-tighter">Sarothi</span>
           </Link>
 
@@ -116,31 +114,7 @@ export const Navbar: React.FC = () => {
               {isActive('/admission') && <><ActiveTriangle /><ActiveTriangleDark /></>}
             </Link>
 
-            {/* Study Dropdown */}
-            <div className="relative" onMouseEnter={() => setIsStudyOpen(true)} onMouseLeave={() => setIsStudyOpen(false)}>
-              <button className={cn("relative flex items-center gap-1 px-3 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800/50", isStudyActive ? "text-zinc-900 dark:text-white font-bold" : "text-zinc-600 dark:text-zinc-400")}>
-                Study <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", isStudyOpen && "rotate-180")} />
-                {isStudyActive && <><ActiveTriangle /><ActiveTriangleDark /></>}
-              </button>
-              {isStudyOpen && (
-                <div className="absolute left-0 top-full mt-1 w-56 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-lg py-1.5 z-50">
-                  <Link to="/study?section=hsc" className="block px-4 py-2.5 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800">
-                    <span className="font-bold">📘 HSC (Science)</span>
-                    <span className="block text-xs text-zinc-400 mt-0.5">Formula sheets & notes</span>
-                  </Link>
-                  <div className="border-t border-zinc-100 dark:border-zinc-800 my-1" />
-                  <Link to="/study?section=admission" className="block px-4 py-2.5 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800">
-                    <span className="font-bold">🎓 Admission (Science)</span>
-                    <span className="block text-xs text-zinc-400 mt-0.5">Physics, Chemistry & more</span>
-                  </Link>
-                  <div className="border-t border-zinc-100 dark:border-zinc-800 my-1" />
-                  <Link to="/study-tips" className="block px-4 py-2.5 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800">
-                    <span className="font-bold">💡 Study Tips</span>
-                    <span className="block text-xs text-zinc-400 mt-0.5">Tips & strategies</span>
-                  </Link>
-                </div>
-              )}
-            </div>
+            {/* ── Study dropdown REMOVED ── */}
 
             {/* Updates */}
             <Link to="/updates" className={cn("relative px-3 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800/50", isActive('/updates') ? "text-zinc-900 dark:text-white font-bold" : "text-zinc-600 dark:text-zinc-400")}>
@@ -154,7 +128,7 @@ export const Navbar: React.FC = () => {
               {isActive('/about') && <><ActiveTriangle /><ActiveTriangleDark /></>}
             </Link>
 
-            {/* Contact Us */}
+            {/* Contact */}
             <Link to="/contact" className={cn("relative flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800/50", isActive('/contact') ? "text-zinc-900 dark:text-white font-bold" : "text-zinc-600 dark:text-zinc-400")}>
               <Phone className="w-3.5 h-3.5" />
               Contact
@@ -270,12 +244,7 @@ export const Navbar: React.FC = () => {
             <Link to="/hsc-ssc?type=SSC" onClick={() => setIsMenuOpen(false)} className="block pl-3 py-1.5 text-sm text-zinc-600 dark:text-zinc-400">📗 SSC</Link>
           </div>
           <Link to="/admission" onClick={() => setIsMenuOpen(false)} className="block px-4 py-2.5 rounded-lg text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800">Admission</Link>
-          <div className="px-4 py-2 space-y-1">
-            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Study</p>
-            <Link to="/study?section=hsc" onClick={() => setIsMenuOpen(false)} className="block pl-3 py-1.5 text-sm text-zinc-600 dark:text-zinc-400">📘 HSC (Science)</Link>
-            <Link to="/study?section=admission" onClick={() => setIsMenuOpen(false)} className="block pl-3 py-1.5 text-sm text-zinc-600 dark:text-zinc-400">🎓 Admission (Science)</Link>
-            <Link to="/study-tips" onClick={() => setIsMenuOpen(false)} className="block pl-3 py-1.5 text-sm text-zinc-600 dark:text-zinc-400">💡 Study Tips</Link>
-          </div>
+          {/* ── Study section REMOVED from mobile too ── */}
           <Link to="/updates" onClick={() => setIsMenuOpen(false)} className="block px-4 py-2.5 rounded-lg text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800">Updates</Link>
           <Link to="/about" onClick={() => setIsMenuOpen(false)} className="block px-4 py-2.5 rounded-lg text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800">About Us</Link>
           <Link to="/contact" onClick={() => setIsMenuOpen(false)} className="block px-4 py-2.5 rounded-lg text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800">📞 Contact Us</Link>
